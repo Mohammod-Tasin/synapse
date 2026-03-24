@@ -3,10 +3,8 @@ import 'package:flutter/foundation.dart';
 /// Application configuration and constants.
 class AppConfig {
   // API Configuration
-  static const String _defaultLocalApiUrl =
-      'https://vulturelike-kyrie-unmoiled.ngrok-free.dev/api/v1';
-  static const String _defaultAndroidApiUrl =
-      'https://vulturelike-kyrie-unmoiled.ngrok-free.dev/api/v1';
+  static const String _defaultLocalApiUrl = 'http://62.171.185.248/api/v1';
+  static const String _defaultAndroidApiUrl = 'http://62.171.185.248/api/v1';
 
   /// Uses an override when provided, otherwise selects a sensible local default.
   ///
