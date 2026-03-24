@@ -119,7 +119,8 @@ class OnboardingData {
     TimeRange? institutionTime,
   }) {
     return OnboardingData(
-      dailyFocusGoalMinutes: dailyFocusGoalMinutes ?? this.dailyFocusGoalMinutes,
+      dailyFocusGoalMinutes:
+          dailyFocusGoalMinutes ?? this.dailyFocusGoalMinutes,
       studyTime: studyTime ?? this.studyTime,
       sleepTime: sleepTime ?? this.sleepTime,
       institutionTime: institutionTime ?? this.institutionTime,
@@ -132,16 +133,13 @@ class TimeRange {
   final AppTimeOfDay startTime;
   final AppTimeOfDay endTime;
 
-  TimeRange({
-    required this.startTime,
-    required this.endTime,
-  });
+  TimeRange({required this.startTime, required this.endTime});
 
   /// Create from time strings in HH:MM format.
   factory TimeRange.fromStrings(String start, String end) {
     final startParts = start.split(':');
     final endParts = end.split(':');
-    
+
     return TimeRange(
       startTime: AppTimeOfDay(
         hour: int.parse(startParts[0]),
@@ -157,13 +155,13 @@ class TimeRange {
   /// Get start time as HH:MM string.
   String get startTimeString {
     return '${startTime.hour.toString().padLeft(2, '0')}:'
-           '${startTime.minute.toString().padLeft(2, '0')}';
+        '${startTime.minute.toString().padLeft(2, '0')}';
   }
 
   /// Get end time as HH:MM string.
   String get endTimeString {
     return '${endTime.hour.toString().padLeft(2, '0')}:'
-           '${endTime.minute.toString().padLeft(2, '0')}';
+        '${endTime.minute.toString().padLeft(2, '0')}';
   }
 
   /// Get display string (e.g., "09:00 - 17:00").
@@ -186,10 +184,7 @@ class AppTimeOfDay {
 
   /// Create a copy with optional new values.
   AppTimeOfDay copyWith({int? hour, int? minute}) {
-    return AppTimeOfDay(
-      hour: hour ?? this.hour,
-      minute: minute ?? this.minute,
-    );
+    return AppTimeOfDay(hour: hour ?? this.hour, minute: minute ?? this.minute);
   }
 
   @override

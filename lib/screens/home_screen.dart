@@ -609,7 +609,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Today at a Glance', style: AppTheme.headingSmall),
+                        const Text(
+                          'Today at a Glance',
+                          style: AppTheme.headingSmall,
+                        ),
                         const SizedBox(height: AppTheme.spacingSm),
                         Text(
                           'Focus: ${_todayStats!.focusSessionsCount} sessions, ${_todayStats!.focusMinutes} min (+${_todayStats!.focusPointsGained})',

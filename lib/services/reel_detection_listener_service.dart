@@ -30,11 +30,12 @@ class ReelDetectionListenerService {
   bool _isListening = false;
   final StreamController<bool> _detectionController =
       StreamController<bool>.broadcast();
-    final StreamController<BlockScreenEvent> _blockScreenController =
+  final StreamController<BlockScreenEvent> _blockScreenController =
       StreamController<BlockScreenEvent>.broadcast();
 
   Stream<bool> get detectionStream => _detectionController.stream;
-    Stream<BlockScreenEvent> get blockScreenStream => _blockScreenController.stream;
+  Stream<BlockScreenEvent> get blockScreenStream =>
+      _blockScreenController.stream;
 
   void start() {
     if (_isListening) {
@@ -53,7 +54,9 @@ class ReelDetectionListenerService {
             false;
         final timestampMs = args['timestampMs'];
 
-        debugPrint('[ReelDetection] detected=$detected timestampMs=$timestampMs');
+        debugPrint(
+          '[ReelDetection] detected=$detected timestampMs=$timestampMs',
+        );
         _detectionController.add(detected);
         return;
       }
@@ -66,7 +69,8 @@ class ReelDetectionListenerService {
           BlockScreenEvent(
             reason: (args['reason'] as String? ?? 'unknown').trim(),
             packageName: args['packageName'] as String?,
-            timestampMs: (args['timestampMs'] as num?)?.toInt() ??
+            timestampMs:
+                (args['timestampMs'] as num?)?.toInt() ??
                 DateTime.now().millisecondsSinceEpoch,
           ),
         );

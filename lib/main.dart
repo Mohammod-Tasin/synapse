@@ -57,9 +57,9 @@ class _MyAppState extends State<MyApp> {
         .detectionStream
         .listen(_handleDetectionEvent);
     _blockScreenSubscription = ReelDetectionListenerService
-      .instance
-      .blockScreenStream
-      .listen(_handleBlockScreenEvent);
+        .instance
+        .blockScreenStream
+        .listen(_handleBlockScreenEvent);
   }
 
   @override

@@ -81,11 +81,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Your Rank: ${_data!.currentUserRank}',
-                        style: AppTheme.headingSmall),
+                    Text(
+                      'Your Rank: ${_data!.currentUserRank}',
+                      style: AppTheme.headingSmall,
+                    ),
                     const SizedBox(height: AppTheme.spacingSm),
-                    Text('Your Points: ${_data!.currentUserPoints}',
-                        style: AppTheme.bodyLarge),
+                    Text(
+                      'Your Points: ${_data!.currentUserPoints}',
+                      style: AppTheme.bodyLarge,
+                    ),
                   ],
                 ),
               ),
@@ -103,7 +107,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     children: [
                       SizedBox(
                         width: 36,
-                        child: Text('#${entry.rank}', style: AppTheme.bodyLarge),
+                        child: Text(
+                          '#${entry.rank}',
+                          style: AppTheme.bodyLarge,
+                        ),
                       ),
                       const SizedBox(width: AppTheme.spacingMd),
                       Expanded(
