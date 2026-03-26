@@ -50,6 +50,9 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.0.0
 
+  # Premium fonts (Poppins)
+  google_fonts: ^6.2.1
+
   # Runtime permissions
   permission_handler: ^11.3.1
 

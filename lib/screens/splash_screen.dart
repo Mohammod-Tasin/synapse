@@ -51,12 +51,12 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: AppTheme.spacingLg),
-            const Text(
+            Text(
               'No to Distraction',
               style: AppTheme.headingMedium,
             ),
             const SizedBox(height: AppTheme.spacingSm),
-            const Text(
+            Text(
               'Focus on what matters',
               style: AppTheme.bodyMedium,
             ),

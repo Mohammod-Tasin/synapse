@@ -202,22 +202,7 @@ class MainActivity : FlutterActivity() {
 	}
 
 	private fun isAccessibilityServiceEnabled(): Boolean {
-		val enabledServices = Settings.Secure.getString(
-			contentResolver,
-			Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-		).orEmpty()
-
-		if (enabledServices.isEmpty()) {
-			return false
-		}
-
-		val component = ComponentName(this, ShortVideoAccessibilityService::class.java)
-		val fullId = component.flattenToString()
-		val shortId = component.flattenToShortString()
-
-		return enabledServices.split(':').any { token ->
-			token.equals(fullId, ignoreCase = true) || token.equals(shortId, ignoreCase = true)
-		}
+		return AccessibilityUtils.isShortVideoServiceEnabled(this)
 	}
 
 	private fun openAccessibilitySettings(): Boolean {

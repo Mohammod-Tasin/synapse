@@ -110,7 +110,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppTheme.spacingLg),
-                    const Text(
+                    Text(
                       'Verify Your Email',
                       style: AppTheme.headingLarge,
                     ),

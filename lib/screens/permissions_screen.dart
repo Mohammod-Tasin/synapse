@@ -119,7 +119,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'To block Reels/Shorts reliably in background, allow all required permissions below.',
               style: AppTheme.bodyMedium,
             ),
@@ -152,11 +152,11 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                   _runAction(_permissionService.openUsageAccessSettings),
             ),
             _PermissionTile(
-              title: 'Ignore Battery Optimizations',
+              title: 'Battery Optimization — No Restriction',
               subtitle:
-                  'Prevents Android Doze from killing long-running service.',
+                  'Open battery settings → find Synapse → set to "No Restriction". This prevents Android from killing the background service.',
               granted: snapshot.batteryOptimizationIgnored,
-              actionLabel: 'Allow Ignore',
+              actionLabel: 'Open Settings',
               isBusy: _isActionInProgress,
               onAction: () => _runAction(
                 _permissionService.openBatteryOptimizationSettings,
@@ -173,11 +173,11 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                   _runAction(_permissionService.requestNotificationPermission),
             ),
             _PermissionTile(
-              title: 'Auto-Start (Optional)',
-              subtitle: 'Helpful for Xiaomi/Oppo/Vivo/Realme devices.',
-              granted: false,
-              actionLabel: 'Open Vendor Page',
-              isOptional: true,
+              title: 'Auto-Start Permission',
+              subtitle:
+                  'Keeps the blocking service running in the background. Tap Enable to allow auto-start.',
+              granted: snapshot.autoStartEnabled,
+              actionLabel: 'Enable Auto-Start',
               isBusy: _isActionInProgress,
               onAction: () =>
                   _runAction(_permissionService.openAutoStartSettings),
@@ -203,7 +203,6 @@ class _PermissionTile extends StatelessWidget {
   final String subtitle;
   final bool granted;
   final String actionLabel;
-  final bool isOptional;
   final bool isBusy;
   final VoidCallback onAction;
 
@@ -214,7 +213,6 @@ class _PermissionTile extends StatelessWidget {
     required this.actionLabel,
     required this.isBusy,
     required this.onAction,
-    this.isOptional = false,
   });
 
   @override
@@ -241,7 +239,7 @@ class _PermissionTile extends StatelessWidget {
               const SizedBox(width: AppTheme.spacingSm),
               Expanded(
                 child: Text(
-                  isOptional ? '$title (Optional)' : title,
+                  title,
                   style: AppTheme.headingSmall,
                 ),
               ),

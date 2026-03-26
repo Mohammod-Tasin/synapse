@@ -53,7 +53,7 @@ class AppConfig {
   static const int minPasswordLength = 8;
   static const int minNameLength = 2;
   static const int minFocusGoal = 15; // minutes
-  static const int maxFocusGoal = 480; // 8 hours
+  static const int maxFocusGoal = 960; // 16 hours
 }
 
 /// Time-related constants

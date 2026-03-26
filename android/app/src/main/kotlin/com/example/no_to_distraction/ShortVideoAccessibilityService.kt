@@ -184,9 +184,64 @@ class ShortVideoAccessibilityService : AccessibilityService() {
             return false
         }
 
+        fun isInCommentSection(node: AccessibilityNodeInfo): Boolean {
+            // Detect if we're in a Facebook comment thread/modal.
+            // Comment sections typically have:
+            // 1. Input field with "comment" or "reply" text
+            // 2. "Most Relevant" or "Newest" sorting indicators
+            // 3. Comment thread containers with text-heavy content
+            
+            fun searchForCommentIndicators(n: AccessibilityNodeInfo): Boolean {
+                val text = n.text?.toString().orEmpty().lowercase()
+                val desc = n.contentDescription?.toString().orEmpty().lowercase()
+                val className = n.className?.toString().orEmpty()
+                val blob = "$text $desc"
+
+                // Check for comment input field signatures
+                if (className.contains("EditText", ignoreCase = true)) {
+                    if (blob.contains("write") && blob.contains("comment")) {
+                        return true
+                    }
+                    if (blob.contains("reply to")) {
+                        return true
+                    }
+                }
+
+                // Check for comment thread headers
+                if (blob.contains("most relevant") ||
+                    blob.contains("newest") ||
+                    blob.contains("oldest") ||
+                    blob.contains("sort") && blob.contains("comment")
+                ) {
+                    return true
+                }
+
+                // Recursive search through children
+                for (i in 0 until n.childCount) {
+                    val child = n.getChild(i) ?: continue
+                    try {
+                        if (searchForCommentIndicators(child)) {
+                            return true
+                        }
+                    } finally {
+                        child.recycle()
+                    }
+                }
+
+                return false
+            }
+
+            return searchForCommentIndicators(node)
+        }
+
         // Instant fast-path for zero-latency detection on strong FB Reel signatures.
         if (hasInstantFastPathSignature(rootNode)) {
             return true
+        }
+
+        // Exclude comment sections early to avoid false positives
+        if (isInCommentSection(rootNode)) {
+            return false
         }
 
         val screenWidthPx = getScreenWidthPx()
@@ -239,6 +294,7 @@ class ShortVideoAccessibilityService : AccessibilityService() {
 
             val text = containerNode.text?.toString().orEmpty().lowercase()
             val desc = containerNode.contentDescription?.toString().orEmpty().lowercase()
+            val className = containerNode.className?.toString().orEmpty()
             val blob = "$text $desc"
 
             // Reduce false positives on non-reels surfaces (e.g., Search/Notifications)
@@ -252,14 +308,22 @@ class ShortVideoAccessibilityService : AccessibilityService() {
                     blob.contains("reel") ||
                     blob.contains("remix")
 
+            // Exclude nodes that are part of a comment (have scrollable comment text, etc.)
+            val looksLikeCommentContent =
+                className.contains("EditText", ignoreCase = true) ||
+                    (blob.contains("reply") && (blob.contains("comment") || blob.contains("reply to"))) ||
+                    className.contains("TextView", ignoreCase = true) && 
+                        (text.length > 10 && (text.contains(",") || text.contains("."))) // Likely comment text
+
             val looksInteractive =
                 hasReelActionSignal &&
+                    !looksLikeCommentContent &&
                     (containerNode.isClickable ||
                         containerNode.isFocusable ||
                         containerNode.isCheckable ||
-                        containerNode.className?.toString().orEmpty().contains("ImageButton", ignoreCase = true) ||
-                        containerNode.className?.toString().orEmpty().contains("ImageView", ignoreCase = true) ||
-                        containerNode.className?.toString().orEmpty().contains("Button", ignoreCase = true))
+                        className.contains("ImageButton", ignoreCase = true) ||
+                        className.contains("ImageView", ignoreCase = true) ||
+                        className.contains("Button", ignoreCase = true))
 
             val validBounds = !bounds.isEmpty && bounds.width() > 0 && bounds.height() > 0
             val centerX = bounds.centerX()
@@ -814,9 +878,19 @@ class ShortVideoAccessibilityService : AccessibilityService() {
         Log.w(TAG, "Accessibility service interrupted")
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.i(TAG, "onUnbind called - allowing rebind")
+        return true
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        Log.i(TAG, "onTaskRemoved called - service will continue running")
+    }
+
     override fun onDestroy() {
         hideBlockOverlay()
         hideReelsBlockOverlay(force = true)
+        Log.i(TAG, "onDestroy called")
         super.onDestroy()
     }
 

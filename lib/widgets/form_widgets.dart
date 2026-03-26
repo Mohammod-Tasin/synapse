@@ -1,8 +1,13 @@
-/// Reusable form input field widget.
+/// Synapse — Neuro-Minimalist Form Widgets
 library;
+
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+/// Soft, rounded input field consistent with Neuro-Minimalist design.
+// ─────────────────────────────────────────────────────────────────────────────
 class FormInputField extends StatefulWidget {
   final String label;
   final String hint;
@@ -46,6 +51,10 @@ class _FormInputFieldState extends State<FormInputField> {
       obscureText: _obscureText,
       onChanged: widget.onChanged,
       validator: widget.validator,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        color: AppTheme.textPrimaryColor,
+      ),
       decoration: AppTheme.buildInputDecoration(
         label: widget.label,
         hint: widget.hint,
@@ -53,7 +62,9 @@ class _FormInputFieldState extends State<FormInputField> {
         suffixIcon: widget.obscureText
             ? IconButton(
                 icon: Icon(
-                  _obscureText ? Icons.visibility_off : Icons.visibility,
+                  _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: AppTheme.textSecondaryColor,
+                  size: 20,
                 ),
                 onPressed: () {
                   setState(() => _obscureText = !_obscureText);
@@ -65,7 +76,187 @@ class _FormInputFieldState extends State<FormInputField> {
   }
 }
 
-/// Reusable time picker button.
+// ─────────────────────────────────────────────────────────────────────────────
+/// Gradient primary action button.
+// ─────────────────────────────────────────────────────────────────────────────
+class GradientButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final IconData? icon;
+
+  const GradientButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      height: 56,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: onPressed != null
+            ? AppTheme.primaryGradient
+            : const LinearGradient(
+                colors: [Color(0xFFB0BEC5), Color(0xFFCFD8DC)],
+              ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+        boxShadow: onPressed != null
+            ? [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : [],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+          child: Center(
+            child: isLoading
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, color: Colors.white, size: 18),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        label,
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+/// Soft secondary / outline button.
+// ─────────────────────────────────────────────────────────────────────────────
+class SoftOutlinedButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final Color? textColor;
+
+  const SoftOutlinedButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = textColor ?? AppTheme.primaryColor;
+    return SizedBox(
+      height: 52,
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: color,
+          side: BorderSide(color: color.withValues(alpha: 0.4), width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+          ),
+          backgroundColor: color.withValues(alpha: 0.04),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+/// Soft error message banner with rose background.
+// ─────────────────────────────────────────────────────────────────────────────
+class ErrorMessage extends StatelessWidget {
+  final String? message;
+
+  const ErrorMessage({super.key, this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    if (message == null || message!.isEmpty) return const SizedBox.shrink();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMd,
+        vertical: AppTheme.spacingSm + 4,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDECEC),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+        border: Border.all(
+          color: AppTheme.errorColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: AppTheme.errorColor, size: 18),
+          const SizedBox(width: AppTheme.spacingSm),
+          Expanded(
+            child: Text(
+              message!,
+              style: GoogleFonts.poppins(
+                color: AppTheme.errorColor,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+/// Soft time picker button with rounded filled styling.
+// ─────────────────────────────────────────────────────────────────────────────
 class TimePickerButton extends StatelessWidget {
   final String label;
   final TimeOfDay time;
@@ -83,17 +274,17 @@ class TimePickerButton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTheme.bodyLarge,
-        ),
+        Text(label, style: AppTheme.bodyMedium),
         const SizedBox(height: AppTheme.spacingSm),
         GestureDetector(
           onTap: () => _selectTime(context),
           child: Container(
-            padding: const EdgeInsets.all(AppTheme.spacingMd),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingMd,
+              vertical: 14,
+            ),
             decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.borderColor),
+              color: AppTheme.inputFillColor,
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             ),
             child: Row(
@@ -101,9 +292,17 @@ class TimePickerButton extends StatelessWidget {
               children: [
                 Text(
                   '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                  style: AppTheme.bodyLarge,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textPrimaryColor,
+                  ),
                 ),
-                const Icon(Icons.access_time, color: AppTheme.primaryColor),
+                const Icon(
+                  Icons.access_time_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -117,14 +316,15 @@ class TimePickerButton extends StatelessWidget {
       context: context,
       initialTime: time,
     );
-
     if (picked != null && picked != time) {
       onTimeSelected(picked);
     }
   }
 }
 
-/// Reusable time range picker widget.
+// ─────────────────────────────────────────────────────────────────────────────
+/// Time range picker with two TimePickerButton children.
+// ─────────────────────────────────────────────────────────────────────────────
 class TimeRangePickerWidget extends StatelessWidget {
   final String label;
   final TimeOfDay startTime;
@@ -141,70 +341,36 @@ class TimeRangePickerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppTheme.headingSmall,
-        ),
-        const SizedBox(height: AppTheme.spacingMd),
-        Row(
-          children: [
-            Expanded(
-              child: TimePickerButton(
-                label: 'Start Time',
-                time: startTime,
-                onTimeSelected: (newStart) {
-                  onTimeRangeSelected((newStart, endTime));
-                },
-              ),
-            ),
-            const SizedBox(width: AppTheme.spacingMd),
-            Expanded(
-              child: TimePickerButton(
-                label: 'End Time',
-                time: endTime,
-                onTimeSelected: (newEnd) {
-                  onTimeRangeSelected((startTime, newEnd));
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Reusable error message widget.
-class ErrorMessage extends StatelessWidget {
-  final String? message;
-
-  const ErrorMessage({super.key, this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    if (message == null || message!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.errorColor.withValues(alpha: 0.1),
-        border: Border.all(color: AppTheme.errorColor),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      child: Row(
+      decoration: AppTheme.softCard(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: AppTheme.errorColor),
-          const SizedBox(width: AppTheme.spacingMd),
-          Expanded(
-            child: Text(
-              message!,
-              style: const TextStyle(color: AppTheme.errorColor),
-            ),
+          Text(label, style: AppTheme.headingSmall),
+          const SizedBox(height: AppTheme.spacingMd),
+          Row(
+            children: [
+              Expanded(
+                child: TimePickerButton(
+                  label: 'Start',
+                  time: startTime,
+                  onTimeSelected: (newStart) {
+                    onTimeRangeSelected((newStart, endTime));
+                  },
+                ),
+              ),
+              const SizedBox(width: AppTheme.spacingMd),
+              Expanded(
+                child: TimePickerButton(
+                  label: 'End',
+                  time: endTime,
+                  onTimeSelected: (newEnd) {
+                    onTimeRangeSelected((startTime, newEnd));
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

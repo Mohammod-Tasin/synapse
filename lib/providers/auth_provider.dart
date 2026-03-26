@@ -17,6 +17,14 @@ enum AuthStatus {
 class AuthProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
 
+  AuthProvider() {
+    ApiService.onTokenExpired = () async {
+      // When a token expires, seamlessly log the user out and trigger a redirect to the login screen
+      _errorMessage = 'Session expired. Please log in again.';
+      await logout();
+    };
+  }
+
   // State
   AuthStatus _status = AuthStatus.initial;
   User? _user;

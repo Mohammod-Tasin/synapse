@@ -1,7 +1,8 @@
-/// Signup screen for new users.
+/// Synapse — Neuro-Minimalist Signup Screen.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
@@ -69,40 +70,41 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingLg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppTheme.spacingSm),
-                const Text('Create Account', style: AppTheme.headingLarge),
-                const SizedBox(height: AppTheme.spacingSm),
-                const Text(
-                  'Join us and start focusing',
-                  style: AppTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppTheme.spacingXl),
-                Consumer<AuthProvider>(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingLg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppTheme.spacingMd),
+
+              // ── Back button ──
+              _BackButton(),
+              const SizedBox(height: AppTheme.spacingMd),
+
+              // ── Header ──
+              Text('Create Account', style: AppTheme.headingLarge),
+              const SizedBox(height: AppTheme.spacingXs),
+              Text('Join and start focusing', style: AppTheme.bodyMedium),
+              const SizedBox(height: AppTheme.spacingXl),
+
+              // ── Form Card ──
+              Container(
+                padding: const EdgeInsets.all(AppTheme.spacingLg),
+                decoration: AppTheme.softCard(),
+                child: Consumer<AuthProvider>(
                   builder: (context, authProvider, _) {
                     return Form(
                       key: _formKey,
                       child: Column(
                         children: [
-                          ErrorMessage(message: authProvider.errorMessage),
-                          if (authProvider.errorMessage != null)
+                          if (authProvider.errorMessage != null) ...[
+                            ErrorMessage(message: authProvider.errorMessage),
                             const SizedBox(height: AppTheme.spacingMd),
+                          ],
+
                           FormInputField(
                             label: 'Full Name',
-                            hint: 'Enter your full name',
-                            prefixIcon: Icons.person_outlined,
+                            hint: 'Your name',
+                            prefixIcon: Icons.person_outline_rounded,
                             controller: _nameController,
                             validator: (value) {
                               if (value?.isEmpty ?? true) {
@@ -115,9 +117,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
                           const SizedBox(height: AppTheme.spacingMd),
+
                           FormInputField(
                             label: 'Email',
-                            hint: 'Enter your email',
+                            hint: 'you@example.com',
                             prefixIcon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             controller: _emailController,
@@ -132,42 +135,37 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
                           const SizedBox(height: AppTheme.spacingMd),
+
                           FormInputField(
                             label: 'Password',
                             hint: 'At least 8 characters',
-                            prefixIcon: Icons.lock_outlined,
+                            prefixIcon: Icons.lock_outline_rounded,
                             controller: _passwordController,
                             obscureText: true,
-                            onChanged: (value) => setState(() {}),
+                            onChanged: (_) => setState(() {}),
                             validator: (value) {
                               if (value?.isEmpty ?? true) {
                                 return 'Password is required';
                               }
                               if (!_isPasswordStrong(value!)) {
-                                return 'Password must contain uppercase, lowercase, and number';
+                                return 'Needs uppercase, lowercase & number';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: AppTheme.spacingSm),
-                          if (_passwordController.text.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppTheme.spacingMd,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _PasswordStrengthIndicator(
-                                    password: _passwordController.text,
-                                  ),
-                                ],
-                              ),
+
+                          if (_passwordController.text.isNotEmpty) ...[
+                            const SizedBox(height: AppTheme.spacingSm),
+                            _PasswordStrengthBar(
+                              password: _passwordController.text,
                             ),
+                          ],
+                          const SizedBox(height: AppTheme.spacingMd),
+
                           FormInputField(
                             label: 'Confirm Password',
                             hint: 'Re-enter your password',
-                            prefixIcon: Icons.lock_outlined,
+                            prefixIcon: Icons.lock_outline_rounded,
                             controller: _confirmPasswordController,
                             obscureText: true,
                             validator: (value) {
@@ -181,87 +179,96 @@ class _SignupScreenState extends State<SignupScreen> {
                             },
                           ),
                           const SizedBox(height: AppTheme.spacingMd),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _agreedToTerms,
-                                onChanged: (value) {
-                                  setState(
-                                    () => _agreedToTerms = value ?? false,
-                                  );
-                                },
-                                activeColor: AppTheme.primaryColor,
-                              ),
-                              Expanded(
-                                child: Text.rich(
-                                  TextSpan(
-                                    text: "I agree to the ",
-                                    style: AppTheme.bodySmall,
-                                    children: [
-                                      TextSpan(
-                                        text: 'Terms and Conditions',
-                                        style: AppTheme.bodySmall.copyWith(
-                                          color: AppTheme.primaryColor,
-                                          fontWeight: FontWeight.w600,
+
+                          // ── Terms toggle ──
+                          GestureDetector(
+                            onTap: () => setState(
+                              () => _agreedToTerms = !_agreedToTerms,
+                            ),
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: _agreedToTerms
+                                        ? AppTheme.primaryColor
+                                        : AppTheme.inputFillColor,
+                                    borderRadius: BorderRadius.circular(7),
+                                    border: Border.all(
+                                      color: _agreedToTerms
+                                          ? AppTheme.primaryColor
+                                          : AppTheme.borderColor,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: _agreedToTerms
+                                      ? const Icon(
+                                          Icons.check,
+                                          size: 13,
+                                          color: Colors.white,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: AppTheme.spacingSm),
+                                Expanded(
+                                  child: Text.rich(
+                                    TextSpan(
+                                      text: 'I agree to the ',
+                                      style: AppTheme.bodySmall,
+                                      children: [
+                                        TextSpan(
+                                          text: 'Terms and Conditions',
+                                          style: AppTheme.bodySmall.copyWith(
+                                            color: AppTheme.primaryColor,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppTheme.spacingLg),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: authProvider.isLoading
-                                  ? null
-                                  : () => _handleSignup(authProvider),
-                              child: authProvider.isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    )
-                                  : const Text('Create Account'),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: AppTheme.spacingMd),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Already have an account? ',
-                                style: AppTheme.bodySmall,
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pushNamed('/login');
-                                },
-                                child: const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: AppTheme.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: AppTheme.spacingLg),
+
+                          GradientButton(
+                            label: 'Create Account',
+                            isLoading: authProvider.isLoading,
+                            onPressed: authProvider.isLoading
+                                ? null
+                                : () => _handleSignup(authProvider),
                           ),
                         ],
                       ),
                     );
                   },
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppTheme.spacingLg),
+
+              // ── Login link ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Already have an account?  ', style: AppTheme.bodySmall),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pushNamed('/login'),
+                    child: Text(
+                      'Sign in',
+                      style: GoogleFonts.poppins(
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.spacingXl),
+            ],
           ),
         ),
       ),
@@ -269,56 +276,91 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
-/// Password strength indicator widget.
-class _PasswordStrengthIndicator extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+/// Animated gradient password strength bar.
+// ─────────────────────────────────────────────────────────────────────────────
+class _PasswordStrengthBar extends StatelessWidget {
   final String password;
+  const _PasswordStrengthBar({required this.password});
 
-  const _PasswordStrengthIndicator({required this.password});
+  int get _strength {
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (password.contains(RegExp(r'[A-Z]'))) score++;
+    if (password.contains(RegExp(r'[a-z]'))) score++;
+    if (password.contains(RegExp(r'[0-9]'))) score++;
+    if (password.contains(RegExp(r'[!@#$%^&*]'))) score++;
+    return score;
+  }
 
-  bool get _hasUppercase => password.contains(RegExp(r'[A-Z]'));
-  bool get _hasLowercase => password.contains(RegExp(r'[a-z]'));
-  bool get _hasNumber => password.contains(RegExp(r'[0-9]'));
-  bool get _hasMinLength => password.length >= 8;
+  String get _label {
+    final s = _strength;
+    if (s <= 1) return 'Weak';
+    if (s <= 3) return 'Fair';
+    return 'Strong';
+  }
+
+  Color get _color {
+    final s = _strength;
+    if (s <= 1) return const Color(0xFFEF5350);
+    if (s <= 3) return const Color(0xFFFFB74D);
+    return AppTheme.successColor;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final ratio = (_strength / 5).clamp(0.0, 1.0);
+    return Row(
       children: [
-        const Text('Password Requirements:', style: AppTheme.bodySmall),
-        const SizedBox(height: AppTheme.spacingSm),
-        _RequirementCheck(met: _hasMinLength, text: 'At least 8 characters'),
-        _RequirementCheck(met: _hasUppercase, text: 'One uppercase letter'),
-        _RequirementCheck(met: _hasLowercase, text: 'One lowercase letter'),
-        _RequirementCheck(met: _hasNumber, text: 'One number'),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: 4,
+              child: LinearProgressIndicator(
+                value: ratio,
+                backgroundColor: AppTheme.borderColor,
+                valueColor: AlwaysStoppedAnimation<Color>(_color),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppTheme.spacingSm),
+        Text(
+          _label,
+          style: AppTheme.bodySmall.copyWith(
+            color: _color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _RequirementCheck extends StatelessWidget {
-  final bool met;
-  final String text;
-
-  const _RequirementCheck({required this.met, required this.text});
-
+// ─────────────────────────────────────────────────────────────────────────────
+/// Soft back button.
+// ─────────────────────────────────────────────────────────────────────────────
+class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          met ? Icons.check_circle : Icons.circle_outlined,
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pop(),
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: AppTheme.inputFillColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+          border: Border.all(color: AppTheme.borderColor),
+        ),
+        child: const Icon(
+          Icons.arrow_back_ios_new_rounded,
           size: 16,
-          color: met ? AppTheme.successColor : AppTheme.textSecondaryColor,
+          color: AppTheme.textPrimaryColor,
         ),
-        const SizedBox(width: AppTheme.spacingSm),
-        Text(
-          text,
-          style: AppTheme.bodySmall.copyWith(
-            color: met ? AppTheme.successColor : AppTheme.textSecondaryColor,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

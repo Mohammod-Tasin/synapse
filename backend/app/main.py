@@ -672,6 +672,39 @@ async def reset_password(request: ResetPasswordRequest):
 
 
 # ======================== Onboarding Endpoint ========================
+@app.get(
+    f"{settings.API_PREFIX}/onboarding",
+    response_model=OnboardingRequest,
+    tags=["Onboarding"],
+    dependencies=[Depends(get_current_user)]
+)
+async def get_onboarding(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get user's existing onboarding preferences and schedule.
+    Protected endpoint - requires JWT token.
+    """
+    db = get_database()
+    user_id = current_user["user_id"]
+    user_doc = db.users.find_one({"_id": ObjectId(user_id)})
+    
+    if not user_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+        
+    return OnboardingRequest(
+        daily_focus_goal_minutes=user_doc.get("daily_focus_goal_minutes", 120),
+        study_time_start=user_doc.get("study_time_start", "09:00"),
+        study_time_end=user_doc.get("study_time_end", "17:00"),
+        sleep_time_start=user_doc.get("sleep_time_start", "22:00"),
+        sleep_time_end=user_doc.get("sleep_time_end", "07:00"),
+        institution_time_start=user_doc.get("institution_time_start", "09:00"),
+        institution_time_end=user_doc.get("institution_time_end", "17:00"),
+    )
+
 @app.post(
     f"{settings.API_PREFIX}/onboarding",
     response_model=OnboardingResponse,

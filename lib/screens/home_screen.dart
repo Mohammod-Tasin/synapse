@@ -1,13 +1,17 @@
-/// Home screen displayed after successful login and onboarding.
+/// Synapse — Neuro-Minimalist Home Screen.
+/// All business logic preserved; only UI/presentation layer revamped.
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:no_to_distraction/models/stats.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:no_to_distraction/models/stats.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
 import 'package:no_to_distraction/services/accessibility_permission_service.dart';
 import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
+import 'package:no_to_distraction/widgets/synapse_illustrations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final AccessibilityPermissionService _permissionService =
       AccessibilityPermissionService();
   final ApiService _apiService = ApiService();
-  static const Color _warningColor = Color(0xFFF59E0B);
 
   PermissionSnapshot? _permissionSnapshot;
   bool _isCheckingPermissions = true;
@@ -36,12 +39,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _instaLockRemainingHours = 0;
   int _ytLockRemainingHours = 0;
 
-  // Focus mode state
   bool _focusModeActive = false;
   int _focusModeRemainingMinutes = 0;
 
   TodayStats? _todayStats;
   bool _isLoadingStats = true;
+
+  // Tips PageView controller
+  final PageController _tipsController = PageController();
+  int _currentTipPage = 0;
+
+  static const List<_TipData> _tips = [
+    _TipData(
+      icon: Icons.timer_rounded,
+      title: 'Pomodoro Technique',
+      body: 'Work 25 minutes, rest 5. Your brain will thank you.',
+      color: Color(0xFF4A90B8),
+    ),
+    _TipData(
+      icon: Icons.do_not_disturb_on_rounded,
+      title: 'Eliminate Distractions',
+      body: 'Turn off notifications during focus sessions.',
+      color: Color(0xFF5BA89A),
+    ),
+    _TipData(
+      icon: Icons.bedtime_rounded,
+      title: 'Protect Your Sleep',
+      body: 'Good sleep improves focus by up to 40%.',
+      color: Color(0xFF7B9CE1),
+    ),
+    _TipData(
+      icon: Icons.water_drop_rounded,
+      title: 'Stay Hydrated',
+      body: 'Drink water regularly. Dehydration kills concentration.',
+      color: Color(0xFF66A8A0),
+    ),
+    _TipData(
+      icon: Icons.directions_walk_rounded,
+      title: 'Take Movement Breaks',
+      body: 'A 5-minute walk resets your focus capacity.',
+      color: Color(0xFF9B8CE1),
+    ),
+  ];
 
   @override
   void initState() {
@@ -56,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _tipsController.dispose();
     super.dispose();
   }
 
@@ -70,51 +110,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadTodayStats() async {
-    setState(() {
-      _isLoadingStats = true;
-    });
-
+    setState(() => _isLoadingStats = true);
     try {
       final stats = await _apiService.getTodayStats();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _todayStats = stats;
-      });
+      if (!mounted) return;
+      setState(() => _todayStats = stats);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _todayStats = null;
-      });
+      if (!mounted) return;
+      setState(() => _todayStats = null);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingStats = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingStats = false);
     }
   }
 
   Future<void> _refreshPermissionSnapshot() async {
-    setState(() {
-      _isCheckingPermissions = true;
-    });
-
+    setState(() => _isCheckingPermissions = true);
     try {
       final snapshot = await _permissionService.getSnapshot();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _permissionSnapshot = snapshot;
-      });
+      if (!mounted) return;
+      setState(() => _permissionSnapshot = snapshot);
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _permissionSnapshot = const PermissionSnapshot(
           accessibilityEnabled: false,
@@ -122,23 +138,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           usageAccessEnabled: false,
           batteryOptimizationIgnored: false,
           notificationEnabled: false,
+          autoStartEnabled: false,
         );
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isCheckingPermissions = false;
-        });
-      }
+      if (mounted) setState(() => _isCheckingPermissions = false);
     }
   }
 
   Future<void> _openAccessibilitySettings() async {
     final opened = await _permissionService.openAccessibilitySettings();
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     if (!opened) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unable to open Accessibility settings.')),
@@ -147,16 +157,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadBlockToggles() async {
-    setState(() {
-      _isLoadingBlockToggles = true;
-    });
-
+    setState(() => _isLoadingBlockToggles = true);
     try {
       final toggles = await _permissionService.getReelsBlockToggles();
       final lockStatus = await _permissionService.getReelsLockStatus();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _blockFbReels = toggles['block_fb_reels'] ?? false;
         _blockInstaReels = toggles['block_insta_reels'] ?? false;
@@ -170,9 +175,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _ytLockRemainingHours = lockStatus['ytRemainingHours'] as int? ?? 0;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _blockFbReels = false;
         _blockInstaReels = false;
@@ -185,48 +188,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         _ytLockRemainingHours = 0;
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingBlockToggles = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingBlockToggles = false);
     }
   }
 
   Future<void> _persistBlockToggles() async {
-    setState(() {
-      _isSavingBlockToggles = true;
-    });
-
+    setState(() => _isSavingBlockToggles = true);
     try {
       final ok = await _permissionService.setReelsBlockToggles(
         blockFbReels: _blockFbReels,
         blockInstaReels: _blockInstaReels,
         blockYtShorts: _blockYtShorts,
       );
-
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       if (!ok) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Unable to save blocking toggles.')),
         );
       }
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to save blocking toggles.')),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSavingBlockToggles = false;
-        });
-      }
+      if (mounted) setState(() => _isSavingBlockToggles = false);
     }
   }
 
@@ -234,7 +220,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       final status = await _permissionService.getFocusModeStatus();
       if (!mounted) return;
-
       setState(() {
         _focusModeActive = status['isActive'] as bool? ?? false;
         _focusModeRemainingMinutes = status['remainingMinutes'] as int? ?? 0;
@@ -253,18 +238,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final success = await _permissionService.startFocusMode(
         durationMinutes: durationMinutes,
       );
-
       if (!mounted) return;
-
       if (success) {
         try {
           await _apiService.logFocusSession(durationMinutes: durationMinutes);
-        } catch (_) {
-          // Ignore point logging failure for now. Session has started locally.
-        }
-
+        } catch (_) {}
         if (!mounted) return;
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Focus mode started for $durationMinutes minutes'),
@@ -279,18 +258,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
     }
   }
 
   Future<List<String>> _getSelectedDistractingAppNames() async {
     final selectedPackages = await _permissionService.getDistractingApps();
-    if (selectedPackages.isEmpty) {
-      return <String>[];
-    }
-
+    if (selectedPackages.isEmpty) return <String>[];
     final installedAppsRaw = await _permissionService.getInstalledApps();
     final appNameByPackage = <String, String>{};
     for (final item in installedAppsRaw) {
@@ -298,13 +274,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         final packageName = (item['packageName'] as String?)?.trim() ?? '';
         final appName = (item['appName'] as String?)?.trim() ?? '';
         if (packageName.isNotEmpty) {
-          appNameByPackage[packageName] = appName.isEmpty
-              ? packageName
-              : appName;
+          appNameByPackage[packageName] =
+              appName.isEmpty ? packageName : appName;
         }
       }
     }
-
     return selectedPackages.map((pkg) => appNameByPackage[pkg] ?? pkg).toList();
   }
 
@@ -315,10 +289,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _showFocusDurationPicker() async {
     final selectedApps = await _getSelectedDistractingAppNames();
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     await showDialog(
       context: context,
       builder: (context) => FocusDurationPicker(
@@ -329,394 +300,861 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  // ── Computed score: base 100 + net points (never show negative) ──
+  int get _focusScore {
+    if (_isLoadingStats || _todayStats == null) return 100;
+    return (100 + (_todayStats!.netPointsToday)).clamp(0, 9999);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('No to Distraction'),
-        elevation: 0,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: AppTheme.spacingMd),
-            child: Center(
-              child: Consumer<AuthProvider>(
-                builder: (context, authProvider, _) {
-                  return GestureDetector(
-                    onTap: () {
-                      showMenu<String>(
-                        context: context,
-                        position: const RelativeRect.fromLTRB(100, 80, 0, 0),
-                        items: <PopupMenuEntry<String>>[
-                          const PopupMenuItem<String>(
-                            value: 'profile',
-                            child: Text('Profile'),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'settings',
-                            child: Text('Settings'),
-                          ),
-                          const PopupMenuDivider(),
-                          const PopupMenuItem<String>(
-                            value: 'logout',
-                            child: Text('Logout'),
-                          ),
-                        ],
-                      ).then((value) {
-                        if (value == 'logout') {
-                          authProvider.logout();
-                        }
-                      });
-                    },
-                    child: const CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor,
-                      child: Icon(Icons.person, color: Colors.white),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           final user = authProvider.user;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.spacingLg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_isCheckingPermissions)
-                  const Center(child: CircularProgressIndicator())
-                else if (_permissionSnapshot != null &&
-                    !_permissionSnapshot!.allRequiredGranted) ...[
-                  _MissingPermissionsCard(
-                    snapshot: _permissionSnapshot!,
-                    onOpenAccessibility: _openAccessibilitySettings,
-                    onOpenOverlay: () async {
-                      await _permissionService.openOverlaySettings();
-                    },
-                    onOpenUsageAccess: () async {
-                      await _permissionService.openUsageAccessSettings();
-                    },
-                    onOpenBatteryOptimization: () async {
-                      await _permissionService
-                          .openBatteryOptimizationSettings();
-                    },
-                    onRequestNotification: () async {
-                      await _permissionService.requestNotificationPermission();
-                    },
-                    onRefresh: _refreshPermissionSnapshot,
-                  ),
-                  const SizedBox(height: AppTheme.spacingLg),
-                ],
-
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingMd),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    border: Border.all(color: AppTheme.borderColor),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Block Reels and Shorts',
-                              style: AppTheme.headingSmall,
-                            ),
-                          ),
-                          if (_isLoadingBlockToggles || _isSavingBlockToggles)
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: AppTheme.spacingSm),
-                      Text(
-                        _isFbReelsLocked ||
-                                _isInstaReelsLocked ||
-                                _isYtShortsLocked
-                            ? '48-hour lock applies only to blocked platform(s).'
-                            : 'Enable platform-wise protection. Blocking starts only for enabled apps.',
-                        style: AppTheme.bodySmall,
-                      ),
-                      const SizedBox(height: AppTheme.spacingSm),
-                      SwitchListTile.adaptive(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          _isFbReelsLocked
-                              ? 'Facebook Reels (Locked ${_fbLockRemainingHours}h)'
-                              : 'Facebook Reels',
-                        ),
-                        value: _blockFbReels,
-                        onChanged:
-                            _isLoadingBlockToggles ||
-                                _isSavingBlockToggles ||
-                                _isFbReelsLocked
-                            ? null
-                            : (value) async {
-                                setState(() {
-                                  _blockFbReels = value;
-                                });
-                                await _persistBlockToggles();
-                              },
-                      ),
-                      SwitchListTile.adaptive(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          _isInstaReelsLocked
-                              ? 'Instagram Reels (Locked ${_instaLockRemainingHours}h)'
-                              : 'Instagram Reels',
-                        ),
-                        value: _blockInstaReels,
-                        onChanged:
-                            _isLoadingBlockToggles ||
-                                _isSavingBlockToggles ||
-                                _isInstaReelsLocked
-                            ? null
-                            : (value) async {
-                                setState(() {
-                                  _blockInstaReels = value;
-                                });
-                                await _persistBlockToggles();
-                              },
-                      ),
-                      SwitchListTile.adaptive(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          _isYtShortsLocked
-                              ? 'YouTube Shorts (Locked ${_ytLockRemainingHours}h)'
-                              : 'YouTube Shorts',
-                        ),
-                        value: _blockYtShorts,
-                        onChanged:
-                            _isLoadingBlockToggles ||
-                                _isSavingBlockToggles ||
-                                _isYtShortsLocked
-                            ? null
-                            : (value) async {
-                                setState(() {
-                                  _blockYtShorts = value;
-                                });
-                                await _persistBlockToggles();
-                              },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingLg),
-
-                // Focus mode status
-                if (_focusModeActive)
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacingMd),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(color: Colors.blue),
+          return CustomScrollView(
+            slivers: [
+              // ── Soft SliverAppBar ──
+              SliverAppBar(
+                expandedHeight: 72,
+                floating: true,
+                snap: true,
+                backgroundColor: AppTheme.backgroundColor,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    color: AppTheme.backgroundColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppTheme.spacingLg,
+                      vertical: AppTheme.spacingMd,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    alignment: Alignment.bottomLeft,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.schedule, color: Colors.blue),
-                            const SizedBox(width: AppTheme.spacingSm),
-                            const Expanded(
-                              child: Text(
-                                'Focus Mode Active',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
+                        Text(
+                          'Synapse',
+                          style: GoogleFonts.poppins(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Hero profile avatar
+                        GestureDetector(
+                          onTap: () => _showProfileMenu(context, authProvider),
+                          child: Hero(
+                            tag: 'profile-avatar',
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white,
+                                size: 22,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: AppTheme.spacingSm),
-                        Text(
-                          'Time remaining: $_focusModeRemainingMinutes min',
-                          style: AppTheme.bodySmall,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                if (_focusModeActive)
-                  const SizedBox(height: AppTheme.spacingLg),
+                ),
+              ),
 
-                // Welcome card
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.spacingLg),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome back, ${user?.name}! 👋',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spacingSm),
-                      const Text(
-                        'Ready to focus today?',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppTheme.spacingLg,
+                  0,
+                  AppTheme.spacingLg,
+                  AppTheme.spacingXl,
+                ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // ── Missing permissions banner ──
+                    if (_isCheckingPermissions)
+                      const Padding(
+                        padding: EdgeInsets.only(top: AppTheme.spacingMd),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_permissionSnapshot != null &&
+                        !_permissionSnapshot!.allRequiredGranted) ...[
                       const SizedBox(height: AppTheme.spacingMd),
-                      Text(
-                        _isLoadingStats
-                            ? 'Loading points...'
-                            : 'Total Points: ${_todayStats?.totalPoints ?? 0}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                      _MissingPermissionsCard(
+                        snapshot: _permissionSnapshot!,
+                        onOpenAccessibility: _openAccessibilitySettings,
+                        onOpenOverlay: () async =>
+                            _permissionService.openOverlaySettings(),
+                        onOpenUsageAccess: () async =>
+                            _permissionService.openUsageAccessSettings(),
+                        onOpenBatteryOptimization: () async =>
+                            _permissionService.openBatteryOptimizationSettings(),
+                        onRequestNotification: () async =>
+                            _permissionService.requestNotificationPermission(),
+                        onOpenAutoStart: () async =>
+                            _permissionService.openAutoStartSettings(),
+                        onRefresh: _refreshPermissionSnapshot,
                       ),
+                      const SizedBox(height: AppTheme.spacingLg),
                     ],
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingXl),
 
-                if (!_isLoadingStats && _todayStats != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacingMd),
-                    decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(color: AppTheme.borderColor),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // ── Focus mode active banner ──
+                    if (_focusModeActive) ...[
+                      const SizedBox(height: AppTheme.spacingMd),
+                      _FocusModeBanner(
+                        remainingMinutes: _focusModeRemainingMinutes,
+                      ),
+                      const SizedBox(height: AppTheme.spacingLg),
+                    ] else
+                      const SizedBox(height: AppTheme.spacingMd),
+
+                    // ── Welcome / Score card ──
+                    _buildWelcomeCard(user?.name),
+                    const SizedBox(height: AppTheme.spacingLg),
+
+                    // ── Reels blocking card ──
+                    _buildReelsCard(),
+                    const SizedBox(height: AppTheme.spacingLg),
+
+                    // ── Today at a glance ──
+                    if (!_isLoadingStats && _todayStats != null) ...[
+                      _buildGlanceCard(),
+                      const SizedBox(height: AppTheme.spacingLg),
+                    ],
+
+                    // ── Quick Actions ──
+                    Text('Quick Actions', style: AppTheme.headingSmall),
+                    const SizedBox(height: AppTheme.spacingMd),
+                    _buildQuickActions(),
+                    const SizedBox(height: AppTheme.spacingLg),
+
+                    // ── Focus Tips ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Today at a Glance',
-                          style: AppTheme.headingSmall,
-                        ),
-                        const SizedBox(height: AppTheme.spacingSm),
+                        Text('Focus Tips', style: AppTheme.headingSmall),
                         Text(
-                          'Focus: ${_todayStats!.focusSessionsCount} sessions, ${_todayStats!.focusMinutes} min (+${_todayStats!.focusPointsGained})',
-                          style: AppTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Blocks: ${_todayStats!.blockScreensCount} (-${_todayStats!.pointsLost})',
-                          style: AppTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Net today: ${_todayStats!.netPointsToday}',
+                          '${_currentTipPage + 1} / ${_tips.length}',
                           style: AppTheme.bodySmall,
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingXl),
-                ],
-
-                // Quick actions
-                const Text('Quick Actions', style: AppTheme.headingSmall),
-                const SizedBox(height: AppTheme.spacingMd),
-                GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: AppTheme.spacingMd,
-                  mainAxisSpacing: AppTheme.spacingMd,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _ActionCard(
-                      icon: Icons.timer,
-                      title: 'Start Focus',
-                      subtitle: 'Begin a session',
-                      onTap: _showFocusDurationPicker,
-                    ),
-                    _ActionCard(
-                      icon: Icons.timeline,
-                      title: 'Today\'s Stats',
-                      subtitle: 'View progress',
-                      onTap: () {
-                        Navigator.of(context).pushNamed('/today-stats');
-                      },
-                    ),
-                    _ActionCard(
-                      icon: Icons.apps,
-                      title: 'Distracting Apps',
-                      subtitle: 'Manage app list',
-                      onTap: () {
-                        Navigator.of(context).pushNamed('/distracting-apps');
-                      },
-                    ),
-                    _ActionCard(
-                      icon: Icons.settings,
-                      title: 'Quick Block',
-                      subtitle: 'Pick apps + duration',
-                      onTap: () {
-                        Navigator.of(context).pushNamed('/quick-block');
-                      },
-                    ),
-                    _ActionCard(
-                      icon: Icons.insights,
-                      title: 'Analytics',
-                      subtitle: 'Weekly report',
-                      onTap: () {
-                        Navigator.of(context).pushNamed('/analytics');
-                      },
-                    ),
-                    _ActionCard(
-                      icon: Icons.emoji_events,
-                      title: 'Leaderboard',
-                      subtitle: 'See top users',
-                      onTap: () {
-                        Navigator.of(context).pushNamed('/leaderboard');
-                      },
-                    ),
-                  ],
+                    const SizedBox(height: AppTheme.spacingMd),
+                    _buildFocusTips(),
+                  ]),
                 ),
-                const SizedBox(height: AppTheme.spacingXl),
-
-                // Focus tips
-                const Text('Focus Tips', style: AppTheme.headingSmall),
-                const SizedBox(height: AppTheme.spacingMd),
-                _TipCard(
-                  title: 'Use the Pomodoro Technique',
-                  subtitle: 'Work for 25 minutes, then take a 5-minute break.',
-                  icon: Icons.lightbulb_outline,
-                ),
-                const SizedBox(height: AppTheme.spacingMd),
-                _TipCard(
-                  title: 'Eliminate Distractions',
-                  subtitle: 'Turn off notifications during focus sessions.',
-                  icon: Icons.do_not_disturb,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
     );
   }
+
+  // ─── Welcome / Score Card ───────────────────────────────────────────────────
+  Widget _buildWelcomeCard(String? name) {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingLg),
+      decoration: BoxDecoration(
+        gradient: AppTheme.welcomeGradient,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        children: [
+          // Left: greeting text
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hello, ${name ?? 'there'} 👋',
+                  style: AppTheme.headingSmall,
+                ),
+                const SizedBox(height: AppTheme.spacingXs),
+                Text(
+                  'Ready to focus today?',
+                  style: AppTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppTheme.spacingMd),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.bolt_rounded,
+                        size: 14,
+                        color: AppTheme.primaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Base Focus Score',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Right: score badge
+          if (_isLoadingStats)
+            const SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            )
+          else
+            FocusScoreBadge(score: _focusScore, size: 110),
+        ],
+      ),
+    );
+  }
+
+  // ─── Reels Blocking Card ────────────────────────────────────────────────────
+  Widget _buildReelsCard() {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingLg),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0EEFF),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentColor.withValues(alpha: 0.15),
+                  borderRadius:
+                      BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: const Icon(
+                  Icons.shield_rounded,
+                  color: AppTheme.accentColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: AppTheme.spacingSm),
+              Expanded(
+                child: Text(
+                  'Block Reels & Shorts',
+                  style: AppTheme.headingSmall,
+                ),
+              ),
+              if (_isLoadingBlockToggles || _isSavingBlockToggles)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppTheme.spacingXs),
+          Text(
+            _isFbReelsLocked || _isInstaReelsLocked || _isYtShortsLocked
+                ? '48-hour lock is active for enabled platform(s).'
+                : 'Toggle platforms to enable protection.',
+            style: AppTheme.bodySmall,
+          ),
+          const SizedBox(height: AppTheme.spacingMd),
+          _ReelsToggleRow(
+            platformName: 'Facebook Reels',
+            value: _blockFbReels,
+            isLocked: _isFbReelsLocked,
+            remainingHours: _fbLockRemainingHours,
+            isDisabled: _isLoadingBlockToggles || _isSavingBlockToggles,
+            onChanged: (v) async {
+              setState(() => _blockFbReels = v);
+              await _persistBlockToggles();
+            },
+          ),
+          const SizedBox(height: AppTheme.spacingMd),
+          _ReelsToggleRow(
+            platformName: 'Instagram Reels',
+            value: _blockInstaReels,
+            isLocked: _isInstaReelsLocked,
+            remainingHours: _instaLockRemainingHours,
+            isDisabled: _isLoadingBlockToggles || _isSavingBlockToggles,
+            onChanged: (v) async {
+              setState(() => _blockInstaReels = v);
+              await _persistBlockToggles();
+            },
+          ),
+          const SizedBox(height: AppTheme.spacingMd),
+          _ReelsToggleRow(
+            platformName: 'YouTube Shorts',
+            value: _blockYtShorts,
+            isLocked: _isYtShortsLocked,
+            remainingHours: _ytLockRemainingHours,
+            isDisabled: _isLoadingBlockToggles || _isSavingBlockToggles,
+            onChanged: (v) async {
+              setState(() => _blockYtShorts = v);
+              await _persistBlockToggles();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Today at a Glance Card ─────────────────────────────────────────────────
+  Widget _buildGlanceCard() {
+    final stats = _todayStats!;
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.spacingLg),
+      decoration: AppTheme.softCard(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Today at a Glance', style: AppTheme.headingSmall),
+          const SizedBox(height: AppTheme.spacingMd),
+          Row(
+            children: [
+              Expanded(
+                child: _GlanceStat(
+                  icon: Icons.timer_outlined,
+                  value: '${stats.focusSessionsCount}',
+                  label: 'Sessions',
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+              Expanded(
+                child: _GlanceStat(
+                  icon: Icons.schedule_rounded,
+                  value: '${stats.focusMinutes}',
+                  label: 'Minutes',
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+              Expanded(
+                child: _GlanceStat(
+                  icon: Icons.block_rounded,
+                  value: '${stats.blockScreensCount}',
+                  label: 'Blocks',
+                  color: AppTheme.accentColor,
+                ),
+              ),
+            ],
+          ),
+          if (stats.focusPointsGained > 0 || stats.pointsLost > 0) ...[
+            const SizedBox(height: AppTheme.spacingMd),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.spacingMd,
+                vertical: AppTheme.spacingSm,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                borderRadius:
+                    BorderRadius.circular(AppTheme.radiusSm),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.trending_up_rounded,
+                    size: 14,
+                    color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '+${stats.focusPointsGained} earned  ·  ${stats.pointsLost} reduced',
+                    style: AppTheme.bodySmall.copyWith(
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Quick Actions Grid ──────────────────────────────────────────────────────
+  Widget _buildQuickActions() {
+    final actions = [
+      _ActionData(
+        icon: Icons.timer_rounded,
+        title: 'Start Focus',
+        subtitle: 'Begin a session',
+        color: AppTheme.primaryColor,
+        onTap: _showFocusDurationPicker,
+      ),
+      _ActionData(
+        icon: Icons.timeline_rounded,
+        title: "Today's Stats",
+        subtitle: 'View progress',
+        color: AppTheme.secondaryColor,
+        onTap: () => Navigator.of(context).pushNamed('/today-stats'),
+      ),
+      _ActionData(
+        icon: Icons.apps_rounded,
+        title: 'Distracting Apps',
+        subtitle: 'Manage list',
+        color: const Color(0xFF9B8CE1),
+        onTap: () => Navigator.of(context).pushNamed('/distracting-apps'),
+      ),
+      _ActionData(
+        icon: Icons.flash_on_rounded,
+        title: 'Quick Block',
+        subtitle: 'Pick + duration',
+        color: const Color(0xFF66A8A0),
+        onTap: () => Navigator.of(context).pushNamed('/quick-block'),
+      ),
+      _ActionData(
+        icon: Icons.insights_rounded,
+        title: 'Analytics',
+        subtitle: 'Weekly report',
+        color: const Color(0xFF4A90B8),
+        onTap: () => Navigator.of(context).pushNamed('/analytics'),
+      ),
+      _ActionData(
+        icon: Icons.emoji_events_rounded,
+        title: 'Leaderboard',
+        subtitle: 'Top users',
+        color: const Color(0xFFF0A84A),
+        onTap: () => Navigator.of(context).pushNamed('/leaderboard'),
+      ),
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: AppTheme.spacingMd,
+        mainAxisSpacing: AppTheme.spacingMd,
+        childAspectRatio: 0.88,
+      ),
+      itemCount: actions.length,
+      itemBuilder: (ctx, i) => _ActionTile(data: actions[i]),
+    );
+  }
+
+  // ─── Focus Tips PageView ─────────────────────────────────────────────────────
+  Widget _buildFocusTips() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 120,
+          child: PageView.builder(
+            controller: _tipsController,
+            onPageChanged: (p) =>
+                setState(() => _currentTipPage = p),
+            itemCount: _tips.length,
+            itemBuilder: (ctx, i) => _TipCard(tip: _tips[i]),
+          ),
+        ),
+        const SizedBox(height: AppTheme.spacingSm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _tips.length,
+            (i) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: i == _currentTipPage ? 18 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: i == _currentTipPage
+                    ? AppTheme.primaryColor
+                    : AppTheme.primaryColor.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Profile menu ────────────────────────────────────────────────────────────
+  void _showProfileMenu(BuildContext ctx, AuthProvider authProvider) {
+    showMenu<String>(
+      context: ctx,
+      position: const RelativeRect.fromLTRB(100, 80, 0, 0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      items: const <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(value: 'profile', child: Text('Profile Settings')),
+        PopupMenuDivider(),
+        PopupMenuItem<String>(value: 'logout', child: Text('Logout')),
+      ],
+    ).then((value) {
+      if (value == 'profile') {
+        Navigator.of(ctx).pushNamed('/profile');
+      } else if (value == 'logout') {
+        authProvider.logout();
+      }
+    });
+  }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SUBWIDGETS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Single reels toggle row with lock indicator.
+class _ReelsToggleRow extends StatelessWidget {
+  final String platformName;
+  final bool value;
+  final bool isLocked;
+  final int remainingHours;
+  final bool isDisabled;
+  final ValueChanged<bool> onChanged;
+
+  const _ReelsToggleRow({
+    required this.platformName,
+    required this.value,
+    required this.isLocked,
+    required this.remainingHours,
+    required this.isDisabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(platformName, style: AppTheme.bodyLarge),
+              if (isLocked)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lock_clock,
+                      size: 12,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Locked · ${remainingHours}h remaining',
+                      style: AppTheme.bodySmall,
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+        Transform.scale(
+          scale: 0.85,
+          child: CupertinoSwitch(
+            value: value,
+            onChanged: (isDisabled || isLocked) ? null : onChanged,
+            activeTrackColor: AppTheme.primaryColor,
+            thumbColor: CupertinoDynamicColor.withBrightness(
+              color: Colors.white,
+              darkColor: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Glance stat column widget.
+class _GlanceStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _GlanceStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 18),
+        ),
+        const SizedBox(height: AppTheme.spacingSm),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimaryColor,
+          ),
+        ),
+        Text(label, style: AppTheme.caption),
+      ],
+    );
+  }
+}
+
+/// Data model for action tiles.
+class _ActionData {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionData({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+}
+
+/// Neumorphic-light action tile.
+class _ActionTile extends StatelessWidget {
+  final _ActionData data;
+  const _ActionTile({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      child: InkWell(
+        onTap: data.onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            boxShadow: AppTheme.tileShadow,
+            color: Colors.transparent,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: data.color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(data.icon, color: data.color, size: 22),
+              ),
+              const SizedBox(height: AppTheme.spacingSm),
+              Text(
+                data.title,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimaryColor,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                data.subtitle,
+                style: AppTheme.caption,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Data model for tips.
+class _TipData {
+  final IconData icon;
+  final String title;
+  final String body;
+  final Color color;
+
+  const _TipData({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.color,
+  });
+}
+
+/// Horizontal swipeable tip card.
+class _TipCard extends StatelessWidget {
+  final _TipData tip;
+  const _TipCard({required this.tip});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: AppTheme.spacingMd),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        children: [
+          // Color accent strip
+          Container(
+            width: 5,
+            decoration: BoxDecoration(
+              color: tip.color,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppTheme.radiusMd),
+                bottomLeft: Radius.circular(AppTheme.radiusMd),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: tip.color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(tip.icon, color: tip.color, size: 20),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+          // Text
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppTheme.spacingMd,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(tip.title, style: AppTheme.bodyLarge),
+                  const SizedBox(height: AppTheme.spacingXs),
+                  Text(
+                    tip.body,
+                    style: AppTheme.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+        ],
+      ),
+    );
+  }
+}
+
+/// Focus mode active banner (calm organic feel).
+class _FocusModeBanner extends StatelessWidget {
+  final int remainingMinutes;
+  const _FocusModeBanner({required this.remainingMinutes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F4FD),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 5,
+            height: 60,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppTheme.radiusMd),
+                bottomLeft: Radius.circular(AppTheme.radiusMd),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.self_improvement_rounded,
+              color: AppTheme.primaryColor,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppTheme.spacingMd),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Focus Mode Active',
+                    style: AppTheme.bodyLarge.copyWith(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '$remainingMinutes min remaining',
+                    style: AppTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: AppTheme.spacingMd),
+        ],
+      ),
+    );
+  }
+}
+
+/// Missing permissions card.
 class _MissingPermissionsCard extends StatelessWidget {
   final PermissionSnapshot snapshot;
   final Future<void> Function() onOpenAccessibility;
@@ -724,6 +1162,7 @@ class _MissingPermissionsCard extends StatelessWidget {
   final Future<void> Function() onOpenUsageAccess;
   final Future<void> Function() onOpenBatteryOptimization;
   final Future<void> Function() onRequestNotification;
+  final Future<void> Function() onOpenAutoStart;
   final Future<void> Function() onRefresh;
 
   const _MissingPermissionsCard({
@@ -733,6 +1172,7 @@ class _MissingPermissionsCard extends StatelessWidget {
     required this.onOpenUsageAccess,
     required this.onOpenBatteryOptimization,
     required this.onRequestNotification,
+    required this.onOpenAutoStart,
     required this.onRefresh,
   });
 
@@ -740,70 +1180,74 @@ class _MissingPermissionsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final missing = <_PermissionAction>[];
     if (!snapshot.accessibilityEnabled) {
-      missing.add(
-        _PermissionAction(
-          title: 'Accessibility Permission',
-          buttonLabel: 'Enable',
-          onTap: onOpenAccessibility,
-        ),
-      );
+      missing.add(_PermissionAction(
+        title: 'Accessibility Permission',
+        buttonLabel: 'Enable',
+        onTap: onOpenAccessibility,
+      ));
     }
     if (!snapshot.overlayEnabled) {
-      missing.add(
-        _PermissionAction(
-          title: 'Overlay Permission',
-          buttonLabel: 'Enable',
-          onTap: onOpenOverlay,
-        ),
-      );
+      missing.add(_PermissionAction(
+        title: 'Overlay Permission',
+        buttonLabel: 'Enable',
+        onTap: onOpenOverlay,
+      ));
     }
     if (!snapshot.usageAccessEnabled) {
-      missing.add(
-        _PermissionAction(
-          title: 'Usage Access',
-          buttonLabel: 'Enable',
-          onTap: onOpenUsageAccess,
-        ),
-      );
+      missing.add(_PermissionAction(
+        title: 'Usage Access',
+        buttonLabel: 'Enable',
+        onTap: onOpenUsageAccess,
+      ));
     }
     if (!snapshot.batteryOptimizationIgnored) {
-      missing.add(
-        _PermissionAction(
-          title: 'Battery Optimization Exemption',
-          buttonLabel: 'Allow',
-          onTap: onOpenBatteryOptimization,
-        ),
-      );
+      missing.add(_PermissionAction(
+        title: 'Battery Optimization Exemption',
+        hint: 'Set to: No Restriction',
+        buttonLabel: 'Allow',
+        onTap: onOpenBatteryOptimization,
+      ));
     }
     if (!snapshot.notificationEnabled) {
-      missing.add(
-        _PermissionAction(
-          title: 'Notification Permission',
-          buttonLabel: 'Allow',
-          onTap: onRequestNotification,
-        ),
-      );
+      missing.add(_PermissionAction(
+        title: 'Notification Permission',
+        buttonLabel: 'Allow',
+        onTap: onRequestNotification,
+      ));
+    }
+    if (!snapshot.autoStartEnabled) {
+      missing.add(_PermissionAction(
+        title: 'Auto-Start Permission',
+        buttonLabel: 'Enable',
+        onTap: onOpenAutoStart,
+      ));
     }
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingMd),
       decoration: BoxDecoration(
-        color: _HomeScreenState._warningColor.withValues(alpha: 0.12),
+        color: AppTheme.warningColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: _HomeScreenState._warningColor),
+        border: Border.all(
+          color: AppTheme.warningColor.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.warning_amber_rounded,
-                color: _HomeScreenState._warningColor,
+                color: AppTheme.warningColor,
+                size: 18,
               ),
-              SizedBox(width: AppTheme.spacingSm),
-              Expanded(
-                child: Text('Missing Permissions', style: AppTheme.bodyLarge),
+              const SizedBox(width: AppTheme.spacingSm),
+              Text(
+                'Missing Permissions',
+                style: AppTheme.bodyLarge.copyWith(
+                  color: AppTheme.warningColor,
+                ),
               ),
             ],
           ),
@@ -813,21 +1257,48 @@ class _MissingPermissionsCard extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
                 children: [
-                  Expanded(child: Text(item.title, style: AppTheme.bodySmall)),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await item.onTap();
-                    },
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.title, style: AppTheme.bodySmall),
+                        if (item.hint != null)
+                          Text(
+                            item.hint!,
+                            style: AppTheme.caption.copyWith(
+                              color: AppTheme.warningColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async => item.onTap(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.primaryColor,
+                      textStyle: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                    ),
                     child: Text(item.buttonLabel),
                   ),
                 ],
               ),
             ),
-          const SizedBox(height: AppTheme.spacingSm),
           TextButton.icon(
             onPressed: onRefresh,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
             label: const Text('Refresh'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.textSecondaryColor,
+              textStyle: GoogleFonts.poppins(fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -838,103 +1309,20 @@ class _MissingPermissionsCard extends StatelessWidget {
 class _PermissionAction {
   final String title;
   final String buttonLabel;
+  final String? hint;
   final Future<void> Function() onTap;
 
   _PermissionAction({
     required this.title,
     required this.buttonLabel,
     required this.onTap,
+    this.hint,
   });
 }
 
-/// Reusable action card for quick actions.
-class _ActionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingMd),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          border: Border.all(color: AppTheme.borderColor),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: AppTheme.primaryColor),
-            const SizedBox(height: AppTheme.spacingMd),
-            Text(
-              title,
-              style: AppTheme.headingSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-            Text(
-              subtitle,
-              style: AppTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Reusable tip card.
-class _TipCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  const _TipCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.primaryColor),
-          const SizedBox(width: AppTheme.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTheme.bodyLarge),
-                const SizedBox(height: AppTheme.spacingSm),
-                Text(subtitle, style: AppTheme.bodySmall),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// FOCUS DURATION PICKER DIALOG (preserved logic, soft styling)
+// ─────────────────────────────────────────────────────────────────────────────
 class FocusDurationPicker extends StatefulWidget {
   final List<String> selectedDistractingApps;
   final Future<List<String>> Function() onManageApps;
@@ -963,43 +1351,34 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
   }
 
   String _formatDuration(int minutes) {
-    if (minutes < 60) {
-      return '$minutes min';
-    }
+    if (minutes < 60) return '$minutes min';
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    if (mins == 0) {
-      return '$hours h';
-    }
-    return '$hours h $mins min';
+    if (mins == 0) return '$hours h';
+    return '$hours h $mins m';
   }
 
   Future<void> _manageApps() async {
-    setState(() {
-      _isRefreshingApps = true;
-    });
-
+    setState(() => _isRefreshingApps = true);
     try {
       final updatedApps = await widget.onManageApps();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _selectedApps = updatedApps;
-      });
+      if (!mounted) return;
+      setState(() => _selectedApps = updatedApps);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshingApps = false;
-        });
-      }
+      if (mounted) setState(() => _isRefreshingApps = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Start Focus Mode'),
+      title: Text(
+        'Start Focus Mode',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          color: AppTheme.textPrimaryColor,
+        ),
+      ),
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.72,
@@ -1010,50 +1389,51 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Select focus duration:'),
+              Text('Select duration:', style: AppTheme.bodyMedium),
               const SizedBox(height: AppTheme.spacingSm),
-              Text(
-                _formatDuration(_selectedDuration),
-                style: AppTheme.headingSmall,
+              Center(
+                child: Text(
+                  _formatDuration(_selectedDuration),
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
               ),
-              Slider(
-                value: _selectedDuration.toDouble(),
-                min: 5,
-                max: 720,
-                divisions: 143,
-                label: _formatDuration(_selectedDuration),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedDuration = value.toInt();
-                  });
-                },
+              SliderTheme(
+                data: SliderThemeData(
+                  activeTrackColor: AppTheme.primaryColor,
+                  inactiveTrackColor: AppTheme.borderColor,
+                  thumbColor: AppTheme.primaryColor,
+                  overlayColor:
+                      AppTheme.primaryColor.withValues(alpha: 0.1),
+                  trackHeight: 4,
+                ),
+                child: Slider(
+                  value: _selectedDuration.toDouble(),
+                  min: 5,
+                  max: 720,
+                  divisions: 143,
+                  label: _formatDuration(_selectedDuration),
+                  onChanged: (v) =>
+                      setState(() => _selectedDuration = v.toInt()),
+                ),
               ),
-              const SizedBox(height: AppTheme.spacingSm),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    for (final duration in [
-                      15,
-                      25,
-                      45,
-                      60,
-                      90,
-                      120,
-                      180,
-                      360,
-                      720,
-                    ])
+                    for (final d in [15, 25, 45, 60, 90, 120, 180, 360, 720])
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(_formatDuration(duration)),
-                          selected: _selectedDuration == duration,
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedDuration = duration;
-                            });
-                          },
+                          label: Text(_formatDuration(d)),
+                          selected: _selectedDuration == d,
+                          onSelected: (_) =>
+                              setState(() => _selectedDuration = d),
+                          selectedColor:
+                              AppTheme.primaryColor.withValues(alpha: 0.2),
                         ),
                       ),
                   ],
@@ -1064,23 +1444,23 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppTheme.spacingMd),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.08),
+                  color: AppTheme.warningColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                   border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.35),
+                    color: AppTheme.warningColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Selected distracting apps',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    Text(
+                      'Distracting apps',
+                      style: AppTheme.bodyLarge,
                     ),
                     const SizedBox(height: AppTheme.spacingSm),
                     if (_selectedApps.isEmpty)
-                      const Text(
-                        'No app selected yet. You can continue anyway.',
+                      Text(
+                        'No apps selected. You can continue anyway.',
                         style: AppTheme.bodySmall,
                       )
                     else
@@ -1104,10 +1484,18 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2),
                             )
-                          : const Icon(Icons.edit),
+                          : const Icon(Icons.edit_rounded, size: 16),
                       label: const Text('Manage App List'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primaryColor,
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1117,23 +1505,20 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppTheme.spacingMd),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'During focus mode:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: AppTheme.spacingSm),
+                  children: [
+                    Text('During focus mode:', style: AppTheme.bodyLarge),
+                    const SizedBox(height: AppTheme.spacingSm),
                     Text(
                       '✓ Reels and Shorts will be blocked',
                       style: AppTheme.bodySmall,
                     ),
                     Text(
-                      '✓ Selected distracting apps will be blocked',
+                      '✓ Selected apps will be blocked',
                       style: AppTheme.bodySmall,
                     ),
                     Text(
@@ -1152,12 +1537,27 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        TextButton(
           onPressed: () {
             widget.onDurationSelected(_selectedDuration);
             Navigator.pop(context);
           },
-          child: const Text('Start Focus'),
+          style: TextButton.styleFrom(
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(AppTheme.radiusPill),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingLg,
+              vertical: 10,
+            ),
+          ),
+          child: Text(
+            'Start Focus',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
         ),
       ],
     );

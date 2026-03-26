@@ -132,8 +132,8 @@ class OnboardingRequest(BaseModel):
     @classmethod
     def validate_focus_goal(cls, v):
         """Validate focus goal minutes."""
-        if not (15 <= v <= 480):  # 15 mins to 8 hours
-            raise ValueError('Daily focus goal must be between 15 and 480 minutes')
+        if not (15 <= v <= 960):  # 15 mins to 16 hours
+            raise ValueError('Daily focus goal must be between 15 and 960 minutes')
         return v
     
     @field_validator('study_time_start', 'study_time_end', 

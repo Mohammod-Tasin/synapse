@@ -324,7 +324,7 @@ class _QuickBlockScreenState extends State<QuickBlockScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Step 1: Select apps',
                       style: AppTheme.headingSmall,
                     ),
@@ -338,7 +338,7 @@ class _QuickBlockScreenState extends State<QuickBlockScreen> {
                       ),
                     ),
                     const SizedBox(height: AppTheme.spacingMd),
-                    const Text(
+                    Text(
                       'Step 2: Set duration',
                       style: AppTheme.headingSmall,
                     ),

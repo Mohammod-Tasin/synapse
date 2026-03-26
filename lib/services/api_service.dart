@@ -9,8 +9,19 @@ import 'package:no_to_distraction/models/stats.dart';
 import 'package:no_to_distraction/models/user.dart';
 import 'package:no_to_distraction/services/secure_storage_service.dart';
 
+class TokenExpiredException implements Exception {
+  final String message;
+  TokenExpiredException([this.message = 'Session expired. Please log in again.']);
+  
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   final SecureStorageService _storage = SecureStorageService();
+
+  /// Global callback triggered when an API request encounters a 401 Unauthorized (expired token).
+  static Future<void> Function()? onTokenExpired;
 
   static String get _baseUrl => AppConfig.baseUrl;
   static const Duration _timeout = AppConfig.apiTimeout;
@@ -179,38 +190,78 @@ class ApiService {
     throw Exception(_resolveErrorMessage(response, ErrorMessages.serverError));
   }
 
-  /// Submit onboarding preferences (requires authentication).
-  Future<void> submitOnboarding({required OnboardingData data}) async {
+  /// Wrapper for authenticated API requests
+  Future<http.Response> _request({
+    required String method,
+    required String endpoint,
+    Map<String, dynamic>? body,
+  }) async {
     final token = await _storage.getToken();
-    if (token == null) {
-      throw Exception('Not authenticated');
+    if (token == null || token.isEmpty) {
+      onTokenExpired?.call();
+      throw TokenExpiredException();
     }
 
-    final response = await http
-        .post(
-          Uri.parse('$_baseUrl${AppConfig.onboardingEndpoint}'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode(data.toJson()),
-        )
-        .timeout(_timeout);
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    final url = Uri.parse('$_baseUrl$endpoint');
+    http.Response response;
+
+    // Execute the request
+    if (method == 'POST') {
+      response = await http.post(url, headers: headers, body: body != null ? jsonEncode(body) : null).timeout(_timeout);
+    } else if (method == 'GET') {
+      response = await http.get(url, headers: headers).timeout(_timeout);
+    } else {
+      throw UnsupportedError('HTTP method $method not supported');
+    }
+
+    // Intercept 401 Unauthorized token expiration
+    if (response.statusCode == 401) {
+      await logout(); // Clear local storage proactively
+      onTokenExpired?.call();
+      throw TokenExpiredException();
+    }
+
+    return response;
+  }
+
+  /// Submit onboarding preferences (requires authentication).
+  Future<void> submitOnboarding({required OnboardingData data}) async {
+    final response = await _request(
+      method: 'POST',
+      endpoint: AppConfig.onboardingEndpoint,
+      body: data.toJson(),
+    );
 
     if (response.statusCode == 200) {
       // Update user data with onboarding completion
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
       final user = User.fromJson(responseData['user'] as Map<String, dynamic>);
       await _storage.saveUser(user);
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized. Please login again.');
+    } else {
+      throw Exception(_resolveErrorMessage(response, ErrorMessages.serverError));
     }
+  }
 
-    if (response.statusCode != 200) {
-      throw Exception(
-        _resolveErrorMessage(response, ErrorMessages.serverError),
+  /// Get onboarding preferences (requires authentication).
+  Future<OnboardingData?> getOnboardingData() async {
+    try {
+      final response = await _request(
+        method: 'GET',
+        endpoint: AppConfig.onboardingEndpoint,
       );
+
+      if (response.statusCode == 200) {
+        return OnboardingData.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      }
+    } catch (_) {
+      // Ignored: returning null if mapping fails or endpoint is not implemented
     }
+    return null;
   }
 
   /// Logout user (clear local storage).
@@ -233,29 +284,14 @@ class ApiService {
     return await _storage.getToken();
   }
 
-  Future<Map<String, String>> _authHeaders() async {
-    final token = await _storage.getToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('Not authenticated');
-    }
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
-  }
-
   Future<PointsEventResponse> logFocusSession({
     required int durationMinutes,
   }) async {
-    final headers = await _authHeaders();
-    final response = await http
-        .post(
-          Uri.parse('$_baseUrl${AppConfig.focusSessionEventEndpoint}'),
-          headers: headers,
-          body: jsonEncode({'duration_minutes': durationMinutes}),
-        )
-        .timeout(_timeout);
+    final response = await _request(
+      method: 'POST',
+      endpoint: AppConfig.focusSessionEventEndpoint,
+      body: {'duration_minutes': durationMinutes},
+    );
 
     if (response.statusCode == 200) {
       return PointsEventResponse.fromJson(
@@ -271,18 +307,15 @@ class ApiService {
     int pointsPenalty = 1,
     String? packageName,
   }) async {
-    final headers = await _authHeaders();
-    final response = await http
-        .post(
-          Uri.parse('$_baseUrl${AppConfig.blockScreenEventEndpoint}'),
-          headers: headers,
-          body: jsonEncode({
-            'reason': reason,
-            'points_penalty': pointsPenalty,
-            'package_name': packageName,
-          }),
-        )
-        .timeout(_timeout);
+    final response = await _request(
+      method: 'POST',
+      endpoint: AppConfig.blockScreenEventEndpoint,
+      body: {
+        'reason': reason,
+        'points_penalty': pointsPenalty,
+        if (packageName != null) 'package_name': packageName,
+      },
+    );
 
     if (response.statusCode == 200) {
       return PointsEventResponse.fromJson(
@@ -294,13 +327,10 @@ class ApiService {
   }
 
   Future<TodayStats> getTodayStats() async {
-    final headers = await _authHeaders();
-    final response = await http
-        .get(
-          Uri.parse('$_baseUrl${AppConfig.todayStatsEndpoint}'),
-          headers: headers,
-        )
-        .timeout(_timeout);
+    final response = await _request(
+      method: 'GET',
+      endpoint: AppConfig.todayStatsEndpoint,
+    );
 
     if (response.statusCode == 200) {
       return TodayStats.fromJson(
@@ -312,13 +342,10 @@ class ApiService {
   }
 
   Future<AnalyticsResponse> getAnalytics({int days = 7}) async {
-    final headers = await _authHeaders();
-    final response = await http
-        .get(
-          Uri.parse('$_baseUrl${AppConfig.analyticsEndpoint}?days=$days'),
-          headers: headers,
-        )
-        .timeout(_timeout);
+    final response = await _request(
+      method: 'GET',
+      endpoint: '${AppConfig.analyticsEndpoint}?days=$days',
+    );
 
     if (response.statusCode == 200) {
       return AnalyticsResponse.fromJson(
@@ -330,13 +357,10 @@ class ApiService {
   }
 
   Future<LeaderboardResponse> getLeaderboard({int limit = 20}) async {
-    final headers = await _authHeaders();
-    final response = await http
-        .get(
-          Uri.parse('$_baseUrl${AppConfig.leaderboardEndpoint}?limit=$limit'),
-          headers: headers,
-        )
-        .timeout(_timeout);
+    final response = await _request(
+      method: 'GET',
+      endpoint: '${AppConfig.leaderboardEndpoint}?limit=$limit',
+    );
 
     if (response.statusCode == 200) {
       return LeaderboardResponse.fromJson(

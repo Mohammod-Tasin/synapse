@@ -21,6 +21,7 @@ import 'package:no_to_distraction/screens/permissions_screen.dart';
 import 'package:no_to_distraction/screens/quick_block_screen.dart';
 import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/screens/distracting_apps_screen.dart';
+import 'package:no_to_distraction/screens/profile_screen.dart';
 import 'package:no_to_distraction/services/reel_detection_listener_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
@@ -134,6 +135,7 @@ class _MyAppState extends State<MyApp> {
         '/leaderboard': (context) => const LeaderboardScreen(),
         '/quick-block': (context) => const QuickBlockScreen(),
         '/distracting-apps': (context) => const DistractingAppsScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
       debugShowCheckedModeBanner: false,
     );

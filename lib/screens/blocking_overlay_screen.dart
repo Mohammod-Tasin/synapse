@@ -24,16 +24,20 @@ class BlockingOverlayScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.block, color: AppTheme.errorColor, size: 48),
+                  const Icon(
+                    Icons.block,
+                    color: AppTheme.errorColor,
+                    size: 48,
+                  ),
                   const SizedBox(height: AppTheme.spacingMd),
-                  const Text(
+                  Text(
                     'Reels/Shorts Blocked',
                     style: AppTheme.headingSmall,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppTheme.spacingSm),
-                  const Text(
-                    'তোমার ফোকাস রক্ষা করতে short-form ভিডিও এই মুহূর্তে ব্লক করা হয়েছে।',
+                  Text(
+                    'Short-form video is blocked to protect your focus.',
                     style: AppTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),

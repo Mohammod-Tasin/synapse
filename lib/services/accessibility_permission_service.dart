@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionSnapshot {
   final bool accessibilityEnabled;
@@ -11,6 +12,7 @@ class PermissionSnapshot {
   final bool usageAccessEnabled;
   final bool batteryOptimizationIgnored;
   final bool notificationEnabled;
+  final bool autoStartEnabled;
 
   const PermissionSnapshot({
     required this.accessibilityEnabled,
@@ -18,6 +20,7 @@ class PermissionSnapshot {
     required this.usageAccessEnabled,
     required this.batteryOptimizationIgnored,
     required this.notificationEnabled,
+    required this.autoStartEnabled,
   });
 
   bool get allRequiredGranted =>
@@ -25,7 +28,8 @@ class PermissionSnapshot {
       overlayEnabled &&
       usageAccessEnabled &&
       batteryOptimizationIgnored &&
-      notificationEnabled;
+      notificationEnabled &&
+      autoStartEnabled;
 }
 
 class AccessibilityPermissionService {
@@ -34,10 +38,19 @@ class AccessibilityPermissionService {
   );
 
   Future<bool> isAccessibilityServiceEnabled() async {
-    final result = await _channel.invokeMethod<bool>(
-      'isAccessibilityServiceEnabled',
-    );
-    return result ?? false;
+    const attempts = 3;
+    for (var i = 0; i < attempts; i++) {
+      final result = await _channel.invokeMethod<bool>(
+        'isAccessibilityServiceEnabled',
+      );
+      if (result ?? false) {
+        return true;
+      }
+      if (i < attempts - 1) {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
+    }
+    return false;
   }
 
   Future<bool> openAccessibilitySettings() async {
@@ -106,8 +119,18 @@ class AccessibilityPermissionService {
     return status.isGranted;
   }
 
+  static const String _autoStartPromptedKey = 'autostart_prompted';
+
+  Future<bool> isAutoStartPrompted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_autoStartPromptedKey) ?? false;
+  }
+
   Future<bool> openAutoStartSettings() async {
     final result = await _channel.invokeMethod<bool>('openAutoStartSettings');
+    // Mark as prompted regardless of result — user was shown the settings page
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_autoStartPromptedKey, true);
     return result ?? false;
   }
 
@@ -170,6 +193,7 @@ class AccessibilityPermissionService {
     final usage = await isUsageAccessGranted();
     final battery = await isIgnoringBatteryOptimizations();
     final notification = await isNotificationPermissionGranted();
+    final autoStart = await isAutoStartPrompted();
 
     return PermissionSnapshot(
       accessibilityEnabled: accessibility,
@@ -177,6 +201,7 @@ class AccessibilityPermissionService {
       usageAccessEnabled: usage,
       batteryOptimizationIgnored: battery,
       notificationEnabled: notification,
+      autoStartEnabled: autoStart,
     );
   }
 
