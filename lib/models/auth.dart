@@ -66,14 +66,16 @@ class ResetPasswordRequest {
 class RegisterResponse {
   final String message;
   final String email;
+  final Map<String, dynamic>? user;
 
-  RegisterResponse({required this.message, required this.email});
+  RegisterResponse({required this.message, required this.email, this.user});
 
   /// Create from JSON (API response).
   factory RegisterResponse.fromJson(Map<String, dynamic> json) {
     return RegisterResponse(
       message: json['message'] as String? ?? '',
       email: json['email'] as String? ?? '',
+      user: json['user'] as Map<String, dynamic>?,
     );
   }
 }

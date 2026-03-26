@@ -94,6 +94,7 @@ class RegisterResponse(BaseModel):
     """Schema for register response when verification is required."""
     message: str
     email: str
+    user: Optional['UserResponse'] = None
 
 
 class MessageResponse(BaseModel):

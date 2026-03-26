@@ -300,10 +300,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  // ── Computed score: base 100 + net points (never show negative) ──
+  // ── Native DB score binding ──
   int get _focusScore {
-    if (_isLoadingStats || _todayStats == null) return 100;
-    return (100 + (_todayStats!.netPointsToday)).clamp(0, 9999);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    return authProvider.user?.totalPoints ?? 0;
   }
 
   @override

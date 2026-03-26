@@ -91,6 +91,11 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _pendingVerificationEmail = response.email;
+      
+      if (response.user != null) {
+        _user = User.fromJson(response.user!);
+      }
+
       _setStatus(AuthStatus.notAuthenticated);
       _isLoading = false;
       notifyListeners();

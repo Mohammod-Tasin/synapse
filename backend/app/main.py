@@ -330,7 +330,6 @@ async def register(request: RegisterRequest):
             email=request.email,
         )
     
-    # Hash password and create user
     hashed_password = get_password_hash(request.password)
     user = User(
         email=request.email,
@@ -338,6 +337,7 @@ async def register(request: RegisterRequest):
         name=request.name,
         email_verified=False,
     )
+    user.total_points = 100
     
     # Insert user into database
     result = db.users.insert_one(user.to_dict())
@@ -356,9 +356,19 @@ async def register(request: RegisterRequest):
 
     logger.info(f"New user registered (verification pending): {request.email}")
 
+    user_response = UserResponse(
+        id=str(result.inserted_id),
+        email=user.email,
+        name=user.name,
+        onboarding_completed=user.onboarding_completed,
+        created_at=user.created_at,
+        total_points=user.total_points,
+    )
+
     return RegisterResponse(
         message="Verification code sent to your email",
         email=request.email,
+        user=user_response,
     )
 
 
