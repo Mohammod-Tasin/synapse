@@ -587,6 +587,15 @@ class ShortVideoAccessibilityService : AccessibilityService() {
 
             if (newState) {
                 applyReelsLockForTwoDays(detectedPackageName)
+
+                try {
+                    val prefs = getSharedPreferences("reels_block_prefs", MODE_PRIVATE)
+                    val current = prefs.getInt("pending_blocks", 0)
+                    prefs.edit().putInt("pending_blocks", current + 1).apply()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to increment pending blocks", t)
+                }
+
                 if (isFocusModeActive()) {
                     showFocusModeOverlay(isAppBlock = false)
                 } else {

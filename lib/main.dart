@@ -4,6 +4,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
 import 'package:no_to_distraction/screens/blocking_overlay_screen.dart';
@@ -40,7 +41,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final ApiService _apiService = ApiService();
   StreamSubscription<bool>? _detectionSubscription;
@@ -52,6 +53,11 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Sync points immediately on cold boot if background blocks happened
+    _syncPendingBackgroundBlocks();
+
     ReelDetectionListenerService.instance.start();
     _detectionSubscription = ReelDetectionListenerService
         .instance
@@ -65,13 +71,52 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _detectionSubscription?.cancel();
     _blockScreenSubscription?.cancel();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _syncPendingBackgroundBlocks();
+    }
+  }
+
+  Future<void> _syncPendingBackgroundBlocks() async {
+    try {
+      const channel = MethodChannel('no_to_distraction/accessibility_control');
+      final int pendingCount = await channel.invokeMethod('getAndResetPendingBlocks') ?? 0;
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      if (pendingCount > 0) {
+        if (authProvider.isAuthenticated) {
+          authProvider.deductPointsLocally(pendingCount);
+        }
+        await _apiService.logBlockScreen(
+          reason: 'Background Reel Block Sync',
+          pointsPenalty: pendingCount,
+        );
+      }
+
+      if (authProvider.isAuthenticated) {
+        await authProvider.fetchLatestProfileSilently();
+      }
+    } catch (_) {
+      // Ignore background sync errors silently to preserve UX
+    }
+  }
+
   Future<void> _handleBlockScreenEvent(BlockScreenEvent event) async {
     try {
+      // Immediately deduct score locally to eliminate UI delay
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        authProvider.deductPointsLocally(1); 
+      }
+
       await _apiService.logBlockScreen(
         reason: event.reason,
         packageName: event.packageName,

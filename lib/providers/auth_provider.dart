@@ -4,6 +4,7 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:no_to_distraction/models/user.dart';
 import 'package:no_to_distraction/services/api_service.dart';
+import 'package:no_to_distraction/utils/error_utils.dart';
 
 enum AuthStatus {
   initial,
@@ -65,7 +66,7 @@ class AuthProvider extends ChangeNotifier {
         _setStatus(AuthStatus.notAuthenticated);
       }
     } catch (e) {
-      _errorMessage = 'Failed to initialize auth: ${e.toString()}';
+      _errorMessage = 'Failed to initialize auth: ${getFriendlyErrorMessage(e)}';
       _setStatus(AuthStatus.error);
     } finally {
       _isLoading = false;
@@ -101,7 +102,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = getFriendlyErrorMessage(e);
       _setStatus(AuthStatus.notAuthenticated);
       _isLoading = false;
       notifyListeners();
@@ -133,7 +134,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = getFriendlyErrorMessage(e);
       _setStatus(AuthStatus.notAuthenticated);
       _isLoading = false;
       notifyListeners();
@@ -153,7 +154,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = getFriendlyErrorMessage(e);
       _isLoading = false;
       notifyListeners();
       return false;
@@ -191,7 +192,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = getFriendlyErrorMessage(e);
       _setStatus(AuthStatus.notAuthenticated);
       _isLoading = false;
       notifyListeners();
@@ -218,7 +219,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = getFriendlyErrorMessage(e);
       _setStatus(AuthStatus.error);
       _isLoading = false;
       notifyListeners();
@@ -237,7 +238,7 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = null;
       _setStatus(AuthStatus.notAuthenticated);
     } catch (e) {
-      _errorMessage = 'Logout failed: ${e.toString()}';
+      _errorMessage = getFriendlyErrorMessage(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -248,6 +249,28 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Apply local points deduction immediately.
+  void deductPointsLocally(int penalty) {
+    if (_user != null) {
+      int newPoints = _user!.totalPoints - penalty;
+      if (newPoints < 0) newPoints = 0;
+      _user = _user!.copyWith(totalPoints: newPoints);
+      notifyListeners();
+    }
+  }
+
+  /// Silently update user profile in the background.
+  Future<void> fetchLatestProfileSilently() async {
+    if (_user == null) return;
+    try {
+      final user = await _apiService.getStoredUser();
+      if (user != null) {
+        _user = user;
+        notifyListeners();
+      }
+    } catch (_) {}
   }
 
   /// Set auth status.

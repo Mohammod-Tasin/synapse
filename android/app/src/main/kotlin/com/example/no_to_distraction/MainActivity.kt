@@ -99,6 +99,14 @@ class MainActivity : FlutterActivity() {
 						)
 					}
 					"getReelsLockStatus" -> result.success(getReelsLockStatus())
+					"getAndResetPendingBlocks" -> {
+						val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+						val count = prefs.getInt("pending_blocks", 0)
+						if (count > 0) {
+							prefs.edit().putInt("pending_blocks", 0).apply()
+						}
+						result.success(count)
+					}
 					"getQuickBlockStatus" -> {
 						val nowMs = System.currentTimeMillis()
 						val state = QuickBlockStorage.readActive(this@MainActivity, nowMs)
