@@ -322,7 +322,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                         onPressed: _isLoading ? null : _sendCode,
                         child: Text(
                           'Resend Code',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             color: AppTheme.primaryColor,
                             fontWeight: FontWeight.w500,
                             fontSize: 13,

@@ -94,11 +94,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (pendingCount > 0) {
         if (authProvider.isAuthenticated) {
           authProvider.deductPointsLocally(pendingCount);
+          await _apiService.logBlockScreen(
+            reason: 'Background Reel Block Sync',
+            pointsPenalty: pendingCount,
+          );
         }
-        await _apiService.logBlockScreen(
-          reason: 'Background Reel Block Sync',
-          pointsPenalty: pendingCount,
-        );
       }
 
       if (authProvider.isAuthenticated) {

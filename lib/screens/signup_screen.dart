@@ -258,7 +258,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     onTap: () => Navigator.of(context).pushNamed('/login'),
                     child: Text(
                       'Sign in',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,

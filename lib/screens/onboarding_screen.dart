@@ -224,7 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               children: [
                 Text(
                   '$_dailyFocusGoal',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 52,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,

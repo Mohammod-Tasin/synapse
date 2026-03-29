@@ -74,10 +74,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             else if (_data != null) ...[
               Container(
                 padding: const EdgeInsets.all(AppTheme.spacingMd),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                ),
+                decoration: AppTheme.softCard(color: AppTheme.inputFillColor),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -98,11 +95,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 (entry) => Container(
                   margin: const EdgeInsets.only(bottom: AppTheme.spacingSm),
                   padding: const EdgeInsets.all(AppTheme.spacingMd),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    border: Border.all(color: AppTheme.borderColor),
-                  ),
+                  decoration: AppTheme.softCard(),
                   child: Row(
                     children: [
                       SizedBox(

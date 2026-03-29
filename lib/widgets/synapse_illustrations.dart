@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -377,18 +378,18 @@ class FocusScoreBadge extends StatelessWidget {
             children: [
               Text(
                 '$score',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
+                style: GoogleFonts.inter(
                   fontSize: size * 0.26,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimaryColor,
+                  letterSpacing: -1.0,
                 ),
               ),
               Text(
                 'pts',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
+                style: GoogleFonts.inter(
                   fontSize: size * 0.12,
+                  fontWeight: FontWeight.w500,
                   color: AppTheme.textSecondaryColor,
                 ),
               ),
@@ -415,18 +416,16 @@ class _ScoreArcPainter extends CustomPainter {
       center,
       radius,
       Paint()
-        ..color = AppTheme.borderColor
+        ..color = AppTheme.borderColorStrong.withValues(alpha: 0.5)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 8,
+        ..strokeWidth = 3,
     );
 
     // Filled arc
     final arcPaint = Paint()
-      ..shader = const LinearGradient(
-        colors: [Color(0xFF4A90B8), Color(0xFF7B9CE1)],
-      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..color = AppTheme.primaryColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 8
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(

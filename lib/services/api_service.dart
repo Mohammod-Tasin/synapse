@@ -198,8 +198,8 @@ class ApiService {
   }) async {
     final token = await _storage.getToken();
     if (token == null || token.isEmpty) {
-      onTokenExpired?.call();
-      throw TokenExpiredException();
+      print('API ABORTED: Attempted to call $endpoint without a token. Ignoring to prevent false logout.');
+      throw Exception('Not authenticated locally');
     }
 
     final headers = {
@@ -221,6 +221,7 @@ class ApiService {
 
     // Intercept 401 Unauthorized token expiration
     if (response.statusCode == 401) {
+      print('AUTO-LOGOUT TRIGGERED: Failed URL: $endpoint, Token exists locally: ${token.isNotEmpty}');
       await logout(); // Clear local storage proactively
       onTokenExpired?.call();
       throw TokenExpiredException();

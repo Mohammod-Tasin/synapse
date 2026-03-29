@@ -1,7 +1,7 @@
-/// Secure token storage service using flutter_secure_storage.
+/// Token and user data storage using SharedPreferences for highly reliable synchronous access on cold boot.
 library;
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:no_to_distraction/models/user.dart';
 
@@ -9,33 +9,36 @@ class SecureStorageService {
   static const _tokenKey = 'access_token';
   static const _userKey = 'user_data';
 
-  final _storage = const FlutterSecureStorage();
-
   /// Save access token securely.
   Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
   }
 
   /// Retrieve access token.
   Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_tokenKey);
   }
 
   /// Check if token exists.
   Future<bool> hasToken() async {
-    final token = await _storage.read(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_tokenKey);
     return token != null && token.isNotEmpty;
   }
 
   /// Save user data.
   Future<void> saveUser(User user) async {
+    final prefs = await SharedPreferences.getInstance();
     final userJson = jsonEncode(user.toJson());
-    await _storage.write(key: _userKey, value: userJson);
+    await prefs.setString(_userKey, userJson);
   }
 
   /// Retrieve user data.
   Future<User?> getUser() async {
-    final userJson = await _storage.read(key: _userKey);
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString(_userKey);
     if (userJson == null) return null;
 
     try {
@@ -48,7 +51,8 @@ class SecureStorageService {
 
   /// Clear all stored data (logout).
   Future<void> clearAll() async {
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _userKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
   }
 }

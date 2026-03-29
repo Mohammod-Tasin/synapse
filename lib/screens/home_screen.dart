@@ -54,31 +54,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       icon: Icons.timer_rounded,
       title: 'Pomodoro Technique',
       body: 'Work 25 minutes, rest 5. Your brain will thank you.',
-      color: Color(0xFF4A90B8),
+      color: AppTheme.primaryColor,
     ),
     _TipData(
       icon: Icons.do_not_disturb_on_rounded,
       title: 'Eliminate Distractions',
       body: 'Turn off notifications during focus sessions.',
-      color: Color(0xFF5BA89A),
+      color: AppTheme.secondaryColor,
     ),
     _TipData(
       icon: Icons.bedtime_rounded,
       title: 'Protect Your Sleep',
       body: 'Good sleep improves focus by up to 40%.',
-      color: Color(0xFF7B9CE1),
+      color: AppTheme.accentColor,
     ),
     _TipData(
       icon: Icons.water_drop_rounded,
       title: 'Stay Hydrated',
       body: 'Drink water regularly. Dehydration kills concentration.',
-      color: Color(0xFF66A8A0),
+      color: AppTheme.secondaryColor,
     ),
     _TipData(
       icon: Icons.directions_walk_rounded,
       title: 'Take Movement Breaks',
       body: 'A 5-minute walk resets your focus capacity.',
-      color: Color(0xFF9B8CE1),
+      color: AppTheme.textSecondaryColor,
     ),
   ];
 
@@ -325,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 scrolledUnderElevation: 0,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Container(
-                    color: AppTheme.backgroundColor,
+                    color: AppTheme.surfaceColor,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppTheme.spacingLg,
                       vertical: AppTheme.spacingMd,
@@ -335,7 +335,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       children: [
                         Text(
                           'Synapse',
-                          style: GoogleFonts.poppins(
+                          style: GoogleFonts.inter(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
@@ -438,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                     // ── Quick Actions ──
                     Text('Quick Actions', style: AppTheme.headingSmall),
-                    const SizedBox(height: AppTheme.spacingMd),
+                    const SizedBox(height: AppTheme.spacingXs),
                     _buildQuickActions(),
                     const SizedBox(height: AppTheme.spacingLg),
 
@@ -453,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppTheme.spacingMd),
+                    const SizedBox(height: AppTheme.spacingXs),
                     _buildFocusTips(),
                   ]),
                 ),
@@ -469,11 +469,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildWelcomeCard(String? name) {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: BoxDecoration(
-        gradient: AppTheme.welcomeGradient,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        boxShadow: AppTheme.cardShadow,
-      ),
+      decoration: AppTheme.softCard(radius: AppTheme.radiusLg),
       child: Row(
         children: [
           // Left: greeting text
@@ -485,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   'Hello, ${name ?? 'there'} 👋',
                   style: AppTheme.headingSmall,
                 ),
-                const SizedBox(height: AppTheme.spacingXs),
+                const SizedBox(height: 4),
                 Text(
                   'Ready to focus today?',
                   style: AppTheme.bodyMedium,
@@ -511,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       const SizedBox(width: 4),
                       Text(
                         'Base Focus Score',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w500,
@@ -541,11 +537,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildReelsCard() {
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0EEFF),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        boxShadow: AppTheme.cardShadow,
-      ),
+      decoration: AppTheme.softCard(radius: AppTheme.radiusLg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -579,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
             ],
           ),
-          const SizedBox(height: AppTheme.spacingXs),
+          const SizedBox(height: 4),
           Text(
             _isFbReelsLocked || _isInstaReelsLocked || _isYtShortsLocked
                 ? '48-hour lock is active for enabled platform(s).'
@@ -723,28 +715,28 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         icon: Icons.apps_rounded,
         title: 'Distracting Apps',
         subtitle: 'Manage list',
-        color: const Color(0xFF9B8CE1),
+        color: AppTheme.textSecondaryColor,
         onTap: () => Navigator.of(context).pushNamed('/distracting-apps'),
       ),
       _ActionData(
         icon: Icons.flash_on_rounded,
         title: 'Quick Block',
         subtitle: 'Pick + duration',
-        color: const Color(0xFF66A8A0),
+        color: AppTheme.secondaryColor,
         onTap: () => Navigator.of(context).pushNamed('/quick-block'),
       ),
       _ActionData(
         icon: Icons.insights_rounded,
         title: 'Analytics',
         subtitle: 'Weekly report',
-        color: const Color(0xFF4A90B8),
+        color: AppTheme.primaryColor,
         onTap: () => Navigator.of(context).pushNamed('/analytics'),
       ),
       _ActionData(
         icon: Icons.emoji_events_rounded,
         title: 'Leaderboard',
         subtitle: 'Top users',
-        color: const Color(0xFFF0A84A),
+        color: AppTheme.warningColor,
         onTap: () => Navigator.of(context).pushNamed('/leaderboard'),
       ),
     ];
@@ -754,9 +746,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: AppTheme.spacingMd,
-        mainAxisSpacing: AppTheme.spacingMd,
-        childAspectRatio: 0.88,
+        crossAxisSpacing: AppTheme.spacingSm,
+        mainAxisSpacing: AppTheme.spacingSm,
+        childAspectRatio: 1.0,
       ),
       itemCount: actions.length,
       itemBuilder: (ctx, i) => _ActionTile(data: actions[i]),
@@ -915,16 +907,18 @@ class _GlanceStat extends StatelessWidget {
           ),
           child: Icon(icon, color: color, size: 18),
         ),
-        const SizedBox(height: AppTheme.spacingSm),
+        const SizedBox(height: 4),
+        Text(label, style: AppTheme.caption),
+        const SizedBox(height: 2),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             color: AppTheme.textPrimaryColor,
+            height: 1.1,
           ),
         ),
-        Text(label, style: AppTheme.caption),
       ],
     );
   }
@@ -961,26 +955,22 @@ class _ActionTile extends StatelessWidget {
         onTap: data.onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            boxShadow: AppTheme.tileShadow,
-            color: Colors.transparent,
-          ),
+          decoration: AppTheme.softCard(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: data.color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(data.icon, color: data.color, size: 22),
+                child: Icon(data.icon, color: data.color, size: 20),
               ),
-              const SizedBox(height: AppTheme.spacingSm),
+              const SizedBox(height: 4),
               Text(
                 data.title,
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textPrimaryColor,
@@ -1028,11 +1018,7 @@ class _TipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(right: AppTheme.spacingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        boxShadow: AppTheme.cardShadow,
-      ),
+      decoration: AppTheme.softCard(),
       child: Row(
         children: [
           // Color accent strip
@@ -1068,7 +1054,7 @@ class _TipCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(tip.title, style: AppTheme.bodyLarge),
-                  const SizedBox(height: AppTheme.spacingXs),
+                  const SizedBox(height: 4),
                   Text(
                     tip.body,
                     style: AppTheme.bodySmall,
@@ -1094,11 +1080,7 @@ class _FocusModeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F4FD),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        boxShadow: AppTheme.cardShadow,
-      ),
+      decoration: AppTheme.softCard(color: AppTheme.inputFillColor),
       child: Row(
         children: [
           Container(
@@ -1120,7 +1102,7 @@ class _FocusModeBanner extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.self_improvement_rounded,
+              Icons.center_focus_strong_rounded,
               color: AppTheme.primaryColor,
               size: 18,
             ),
@@ -1277,7 +1259,7 @@ class _MissingPermissionsCard extends StatelessWidget {
                     onPressed: () async => item.onTap(),
                     style: TextButton.styleFrom(
                       foregroundColor: AppTheme.primaryColor,
-                      textStyle: GoogleFonts.poppins(
+                      textStyle: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1297,7 +1279,7 @@ class _MissingPermissionsCard extends StatelessWidget {
             label: const Text('Refresh'),
             style: TextButton.styleFrom(
               foregroundColor: AppTheme.textSecondaryColor,
-              textStyle: GoogleFonts.poppins(fontSize: 12),
+              textStyle: GoogleFonts.inter(fontSize: 12),
             ),
           ),
         ],
@@ -1374,7 +1356,7 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
     return AlertDialog(
       title: Text(
         'Start Focus Mode',
-        style: GoogleFonts.poppins(
+        style: GoogleFonts.inter(
           fontWeight: FontWeight.bold,
           color: AppTheme.textPrimaryColor,
         ),
@@ -1394,7 +1376,7 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
               Center(
                 child: Text(
                   _formatDuration(_selectedDuration),
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,
@@ -1491,7 +1473,7 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
                       label: const Text('Manage App List'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppTheme.primaryColor,
-                        textStyle: GoogleFonts.poppins(
+                        textStyle: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1556,7 +1538,7 @@ class _FocusDurationPickerState extends State<FocusDurationPicker> {
           ),
           child: Text(
             'Start Focus',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
           ),
         ),
       ],

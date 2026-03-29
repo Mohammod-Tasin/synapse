@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: AppTheme.spacingLg),
               Text(
                 'Synapse',
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryColor,
@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: Text(
                                   'Forgot password?',
-                                  style: GoogleFonts.poppins(
+                                  style: GoogleFonts.inter(
                                     color: AppTheme.primaryColor,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -288,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.of(context).pushNamed('/signup'),
                     child: Text(
                       'Create one',
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.inter(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -338,7 +338,7 @@ class _SocialButton extends StatelessWidget {
             const SizedBox(width: AppTheme.spacingSm),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 color: AppTheme.textPrimaryColor,
                 fontWeight: FontWeight.w500,
                 fontSize: 13,

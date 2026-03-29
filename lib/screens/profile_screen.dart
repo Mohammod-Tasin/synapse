@@ -124,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: Text(
           'Profile Settings',
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimaryColor,
           ),
@@ -230,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   '$_dailyFocusGoal',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 42,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.primaryColor,

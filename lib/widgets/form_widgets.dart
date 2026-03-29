@@ -51,7 +51,7 @@ class _FormInputFieldState extends State<FormInputField> {
       obscureText: _obscureText,
       onChanged: widget.onChanged,
       validator: widget.validator,
-      style: GoogleFonts.poppins(
+      style: GoogleFonts.inter(
         fontSize: 14,
         color: AppTheme.textPrimaryColor,
       ),
@@ -140,7 +140,7 @@ class GradientButton extends StatelessWidget {
                       ],
                       Text(
                         label,
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
@@ -197,7 +197,7 @@ class SoftOutlinedButton extends StatelessWidget {
             ],
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
                 color: color,
@@ -242,7 +242,7 @@ class ErrorMessage extends StatelessWidget {
           Expanded(
             child: Text(
               message!,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 color: AppTheme.errorColor,
                 fontSize: 12,
               ),
@@ -292,7 +292,7 @@ class TimePickerButton extends StatelessWidget {
               children: [
                 Text(
                   '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.textPrimaryColor,
