@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from app.config import settings
-from app.auth import hash_verification_code
 from app.email_service import (
     generate_verification_code,
     send_password_reset_code,
     send_verification_code,
+    hash_verification_code,
 )
 
 def issue_and_store_verification_code(db, user_doc: dict) -> None:

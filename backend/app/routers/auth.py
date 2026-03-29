@@ -173,7 +173,7 @@ async def verify_email(request: VerifyEmailRequest):
             detail="Verification code expired. Please register again."
         )
 
-    from app.auth import verify_hashed_code
+    from app.email_service import verify_hashed_code
     is_valid = verify_hashed_code(
         email=request.email,
         code=request.code,
@@ -313,7 +313,7 @@ async def reset_password(request: ResetPasswordRequest):
             detail="Reset code expired. Please request a new code."
         )
 
-    from app.auth import verify_hashed_code
+    from app.email_service import verify_hashed_code
     is_valid = verify_hashed_code(
         email=request.email,
         code=request.code,
