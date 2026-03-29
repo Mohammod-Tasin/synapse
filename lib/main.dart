@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/screens/blocking_overlay_screen.dart';
 import 'package:no_to_distraction/screens/splash_screen.dart';
 import 'package:no_to_distraction/screens/login_screen.dart';
@@ -20,9 +21,9 @@ import 'package:no_to_distraction/screens/analytics_screen.dart';
 import 'package:no_to_distraction/screens/leaderboard_screen.dart';
 import 'package:no_to_distraction/screens/permissions_screen.dart';
 import 'package:no_to_distraction/screens/quick_block_screen.dart';
-import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/screens/distracting_apps_screen.dart';
 import 'package:no_to_distraction/screens/profile_screen.dart';
+import 'package:no_to_distraction/services/stats_api.dart';
 import 'package:no_to_distraction/services/reel_detection_listener_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
@@ -30,7 +31,13 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
-    ChangeNotifierProvider(create: (_) => AuthProvider(), child: const MyApp()),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => StatsProvider()),
+      ],
+      child: const MyApp(),
+    ),
   );
 }
 
@@ -43,7 +50,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  final ApiService _apiService = ApiService();
+  final StatsApi _statsApi = StatsApi();
   StreamSubscription<bool>? _detectionSubscription;
   StreamSubscription<BlockScreenEvent>? _blockScreenSubscription;
 
@@ -90,11 +97,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       final int pendingCount = await channel.invokeMethod('getAndResetPendingBlocks') ?? 0;
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final statsProvider = Provider.of<StatsProvider>(context, listen: false);
 
       if (pendingCount > 0) {
         if (authProvider.isAuthenticated) {
-          authProvider.deductPointsLocally(pendingCount);
-          await _apiService.logBlockScreen(
+          statsProvider.applyLocalPenalty(pendingCount);
+          await _statsApi.logBlockScreen(
             reason: 'Background Reel Block Sync',
             pointsPenalty: pendingCount,
           );
@@ -113,11 +121,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     try {
       // Immediately deduct score locally to eliminate UI delay
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final statsProvider = Provider.of<StatsProvider>(context, listen: false);
+      
       if (authProvider.isAuthenticated) {
-        authProvider.deductPointsLocally(1); 
+        statsProvider.applyLocalPenalty(1); 
       }
 
-      await _apiService.logBlockScreen(
+      await _statsApi.logBlockScreen(
         reason: event.reason,
         packageName: event.packageName,
       );
@@ -213,6 +223,13 @@ class _AuthNavigator extends StatelessWidget {
 
         // Fully authenticated - open home directly to avoid re-gating every launch.
         if (authProvider.status == AuthStatus.authenticated) {
+          // Trigger a silent refresh of stats on every successful (re)authentication
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final statsProvider = Provider.of<StatsProvider>(context, listen: false);
+            if (statsProvider.todayStats == null) {
+              statsProvider.refreshAll();
+            }
+          });
           return const HomeScreen();
         }
 

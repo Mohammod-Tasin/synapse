@@ -1,8 +1,8 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:no_to_distraction/models/stats.dart';
-import 'package:no_to_distraction/services/api_service.dart';
+import 'package:provider/provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
 class TodayStatsScreen extends StatefulWidget {
@@ -13,96 +13,71 @@ class TodayStatsScreen extends StatefulWidget {
 }
 
 class _TodayStatsScreenState extends State<TodayStatsScreen> {
-  final ApiService _apiService = ApiService();
-
-  TodayStats? _stats;
-  bool _isLoading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatsProvider>().fetchTodayStats();
     });
-
-    try {
-      final stats = await _apiService.getTodayStats();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _stats = stats;
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Today's Stats")),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.spacingLg),
-          children: [
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.only(top: 64),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_error != null)
-              _ErrorCard(message: _error!, onRetry: _load)
-            else if (_stats != null) ...[
-              _MetricCard(
-                title: 'Total Points',
-                value: _stats!.totalPoints.toString(),
-                subtitle: 'Your cumulative score across all days',
-                icon: Icons.emoji_events,
-              ),
-              const SizedBox(height: AppTheme.spacingMd),
-              _MetricCard(
-                title: 'Focus Work',
-                value:
-                    '${_stats!.focusSessionsCount} sessions • ${_stats!.focusMinutes} min',
-                subtitle: '+${_stats!.focusPointsGained} points gained today',
-                icon: Icons.timer,
-              ),
-              const SizedBox(height: AppTheme.spacingMd),
-              _MetricCard(
-                title: 'Block Screens',
-                value: _stats!.blockScreensCount.toString(),
-                subtitle: '-${_stats!.pointsLost} points penalty today',
-                icon: Icons.block,
-              ),
-              const SizedBox(height: AppTheme.spacingMd),
-              _MetricCard(
-                title: 'Net Today',
-                value: _stats!.netPointsToday.toString(),
-                subtitle: 'Today performance impact (gain - penalty)',
-                icon: Icons.trending_up,
-              ),
-            ],
-          ],
-        ),
+      appBar: AppBar(title: const Text("Today's Stats"), elevation: 0),
+      body: Consumer<StatsProvider>(
+        builder: (context, statsProvider, _) {
+          final stats = statsProvider.todayStats;
+          
+          return RefreshIndicator(
+            onRefresh: () => statsProvider.fetchTodayStats(),
+            child: ListView(
+              padding: const EdgeInsets.all(AppTheme.spacingLg),
+              children: [
+                if (statsProvider.isLoading && stats == null)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 64),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (statsProvider.errorMessage != null)
+                  _ErrorCard(
+                    message: statsProvider.errorMessage!,
+                    onRetry: () => statsProvider.fetchTodayStats(),
+                  )
+                else if (stats != null) ...[
+                  _MetricCard(
+                    title: 'Total Points',
+                    value: stats.totalPoints.toString(),
+                    subtitle: 'Your cumulative score across all days',
+                    icon: Icons.emoji_events,
+                  ),
+                  const SizedBox(height: AppTheme.spacingMd),
+                  _MetricCard(
+                    title: 'Focus Work',
+                    value:
+                        '${stats.focusSessionsCount} sessions • ${stats.focusMinutes} min',
+                    subtitle: '+${stats.focusPointsGained} points gained today',
+                    icon: Icons.timer,
+                  ),
+                  const SizedBox(height: AppTheme.spacingMd),
+                  _MetricCard(
+                    title: 'Block Screens',
+                    value: stats.blockScreensCount.toString(),
+                    subtitle: '-${stats.pointsLost} points penalty today',
+                    icon: Icons.block,
+                  ),
+                  const SizedBox(height: AppTheme.spacingMd),
+                  _MetricCard(
+                    title: 'Net Today',
+                    value: stats.netPointsToday.toString(),
+                    subtitle: 'Today performance impact (gain - penalty)',
+                    icon: Icons.trending_up,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

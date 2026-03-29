@@ -4,6 +4,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
@@ -47,6 +48,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (success) {
+      // Initialize stats for the newly verified user
+      context.read<StatsProvider>().refreshAll();
+      
       Navigator.of(context).popUntil((route) => route.isFirst);
       return;
     }

@@ -5,7 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:no_to_distraction/services/api_service.dart';
+import 'package:no_to_distraction/services/auth_api.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
@@ -18,7 +18,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     with TickerProviderStateMixin {
-  final _apiService = ApiService();
+  final _authApi = AuthApi();
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -78,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     });
 
     try {
-      await _apiService.forgotPassword(email: email);
+      await _authApi.forgotPassword(email: email);
       if (!mounted) return;
       setState(() => _codeSent = true);
       _successAnimCtrl.forward();
@@ -124,7 +124,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     });
 
     try {
-      await _apiService.resetPassword(
+      await _authApi.resetPassword(
         email: email,
         code: code,
         newPassword: newPassword,

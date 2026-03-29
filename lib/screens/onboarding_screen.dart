@@ -5,8 +5,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:no_to_distraction/models/user.dart';
+import 'package:no_to_distraction/models/auth.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 import 'package:no_to_distraction/widgets/synapse_illustrations.dart';
@@ -68,6 +69,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     final success = await authProvider.submitOnboarding(data: data);
     if (success && mounted) {
+      // Initialize stats for the newly onboarded user
+      context.read<StatsProvider>().refreshAll();
+      
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Profile setup complete!')));

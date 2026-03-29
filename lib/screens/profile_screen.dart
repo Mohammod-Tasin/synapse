@@ -4,8 +4,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:no_to_distraction/models/user.dart';
-import 'package:no_to_distraction/services/api_service.dart';
+import 'package:no_to_distraction/models/auth.dart';
+import 'package:no_to_distraction/services/auth_api.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
@@ -17,7 +17,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ApiService _apiService = ApiService();
+  final AuthApi _authApi = AuthApi();
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      final data = await _apiService.getOnboardingData();
+      final data = await _authApi.getOnboardingData();
       if (data != null && mounted) {
         _safeSetState(() {
           _dailyFocusGoal = data.dailyFocusGoalMinutes;
@@ -129,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-      await _apiService.submitOnboarding(data: data);
+      await _authApi.submitOnboarding(data: data);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

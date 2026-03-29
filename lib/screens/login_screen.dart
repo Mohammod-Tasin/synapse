@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/config/app_config.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
@@ -40,6 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
+      // Initialize stats for the newly logged in user
+      context.read<StatsProvider>().refreshAll();
+      
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Login successful!')));

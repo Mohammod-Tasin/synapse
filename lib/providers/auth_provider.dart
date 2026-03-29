@@ -1,9 +1,8 @@
-/// Authentication state management using Provider.
-library;
-
 import 'package:flutter/foundation.dart';
+import 'package:no_to_distraction/models/auth.dart';
 import 'package:no_to_distraction/models/user.dart';
-import 'package:no_to_distraction/services/api_service.dart';
+import 'package:no_to_distraction/services/auth_api.dart';
+import 'package:no_to_distraction/services/base_api.dart';
 import 'package:no_to_distraction/utils/error_utils.dart';
 
 enum AuthStatus {
@@ -16,10 +15,10 @@ enum AuthStatus {
 }
 
 class AuthProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final AuthApi _authApi = AuthApi();
 
   AuthProvider() {
-    ApiService.onTokenExpired = () async {
+    BaseApi.onTokenExpired = () async {
       // When a token expires, seamlessly log the user out and trigger a redirect to the login screen
       _errorMessage = 'Session expired. Please log in again.';
       await logout();
@@ -49,9 +48,9 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isAuthenticated = await _apiService.isAuthenticated();
+      final isAuthenticated = await _authApi.isAuthenticated();
       if (isAuthenticated) {
-        final user = await _apiService.getStoredUser();
+        final user = await _authApi.getStoredUser();
         if (user != null) {
           _user = user;
           if (user.onboardingCompleted) {
@@ -85,7 +84,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.register(
+      final response = await _authApi.register(
         email: email,
         password: password,
         name: name,
@@ -120,7 +119,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.verifyEmail(email: email, code: code);
+      final response = await _authApi.verifyEmail(email: email, code: code);
       _user = User.fromJson(response.user);
       _pendingVerificationEmail = null;
 
@@ -149,7 +148,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _apiService.resendVerificationCode(email: email);
+      await _authApi.resendVerificationCode(email: email);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -175,7 +174,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.login(
+      final response = await _authApi.login(
         email: email,
         password: password,
       );
@@ -207,7 +206,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _apiService.submitOnboarding(data: data);
+      await _authApi.submitOnboarding(data: data);
 
       // Update user with onboarding completion status
       if (_user != null) {
@@ -233,7 +232,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _apiService.logout();
+      await _authApi.logout();
       _user = null;
       _errorMessage = null;
       _setStatus(AuthStatus.notAuthenticated);
@@ -251,21 +250,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Apply local points deduction immediately.
-  void deductPointsLocally(int penalty) {
-    if (_user != null) {
-      int newPoints = _user!.totalPoints - penalty;
-      if (newPoints < 0) newPoints = 0;
-      _user = _user!.copyWith(totalPoints: newPoints);
-      notifyListeners();
-    }
-  }
-
   /// Silently update user profile in the background.
   Future<void> fetchLatestProfileSilently() async {
     if (_user == null) return;
     try {
-      final user = await _apiService.getStoredUser();
+      final user = await _authApi.getStoredUser();
       if (user != null) {
         _user = user;
         notifyListeners();

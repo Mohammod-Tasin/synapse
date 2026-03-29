@@ -6,10 +6,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:no_to_distraction/models/stats.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/services/accessibility_permission_service.dart';
-import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/welcome_card.dart';
 import 'package:no_to_distraction/widgets/reels_card.dart';
@@ -29,7 +28,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final AccessibilityPermissionService _permissionService =
       AccessibilityPermissionService();
-  final ApiService _apiService = ApiService();
 
   PermissionSnapshot? _permissionSnapshot;
   bool _isCheckingPermissions = true;
@@ -47,9 +45,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   bool _focusModeActive = false;
   int _focusModeRemainingMinutes = 0;
-
-  TodayStats? _todayStats;
-  bool _isLoadingStats = true;
 
   // Tips PageView controller
   final PageController _tipsController = PageController();
@@ -116,17 +111,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadTodayStats() async {
-    setState(() => _isLoadingStats = true);
-    try {
-      final stats = await _apiService.getTodayStats();
-      if (!mounted) return;
-      setState(() => _todayStats = stats);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _todayStats = null);
-    } finally {
-      if (mounted) setState(() => _isLoadingStats = false);
-    }
+    context.read<StatsProvider>().fetchTodayStats();
   }
 
   Future<void> _refreshPermissionSnapshot() async {
@@ -247,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       if (success) {
         try {
-          await _apiService.logFocusSession(durationMinutes: durationMinutes);
+          await context.read<StatsProvider>().logFocusSession(durationMinutes);
         } catch (_) {}
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         );
         _loadFocusModeStatus();
-        _loadTodayStats();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to start focus mode')),
@@ -310,15 +294,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // ── Native DB score binding ──
   int get _focusScore {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    return authProvider.user?.totalPoints ?? 0;
+    final statsProvider = Provider.of<StatsProvider>(context, listen: false);
+    return statsProvider.todayStats?.totalPoints ?? authProvider.user?.totalPoints ?? 0;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
+      body: Consumer2<AuthProvider, StatsProvider>(
+        builder: (context, authProvider, statsProvider, _) {
           final user = authProvider.user;
           return CustomScrollView(
             slivers: [
@@ -434,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     // ── Welcome / Score card ──
                     WelcomeCard(
                       name: user?.name,
-                      isLoadingStats: _isLoadingStats,
+                      isLoadingStats: statsProvider.isLoading,
                       focusScore: _focusScore,
                     ),
                     const SizedBox(height: AppTheme.spacingLg),
@@ -468,8 +453,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     const SizedBox(height: AppTheme.spacingLg),
 
                     // ── Today at a glance ──
-                    if (!_isLoadingStats && _todayStats != null) ...[
-                      GlanceCard(stats: _todayStats!),
+                    if (!statsProvider.isLoading && statsProvider.todayStats != null) ...[
+                      GlanceCard(stats: statsProvider.todayStats!),
                       const SizedBox(height: AppTheme.spacingLg),
                     ],
 

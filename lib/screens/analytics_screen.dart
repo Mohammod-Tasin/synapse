@@ -2,8 +2,9 @@ library;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:no_to_distraction/models/stats.dart';
-import 'package:no_to_distraction/services/api_service.dart';
+import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -14,125 +15,97 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  final ApiService _apiService = ApiService();
-
-  AnalyticsResponse? _data;
-  bool _isLoading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<StatsProvider>().fetchAnalytics();
     });
-
-    try {
-      final data = await _apiService.getAnalytics(days: 7);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _data = data;
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Analytics (7 Days)')),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.all(AppTheme.spacingLg),
-          children: [
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.only(top: 64),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_error != null)
-              Text(_error!, style: AppTheme.bodySmall)
-            else if (_data != null) ...[
-              Container(
-                height: 260,
-                padding: const EdgeInsets.all(AppTheme.spacingMd),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  border: Border.all(color: AppTheme.borderColor),
-                ),
-                child: _NetPointsLineChart(series: _data!.series),
-              ),
-              const SizedBox(height: AppTheme.spacingMd),
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spacingMd),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Trend: ${_data!.trend.toUpperCase()}',
-                      style: AppTheme.headingSmall,
+      appBar: AppBar(title: const Text('Analytics (7 Days)'), elevation: 0),
+      body: Consumer<StatsProvider>(
+        builder: (context, statsProvider, _) {
+          final data = statsProvider.analytics;
+
+          return RefreshIndicator(
+            onRefresh: () => statsProvider.fetchAnalytics(),
+            child: ListView(
+              padding: const EdgeInsets.all(AppTheme.spacingLg),
+              children: [
+                if (statsProvider.isLoading && data == null)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 64),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (statsProvider.errorMessage != null)
+                  Text(statsProvider.errorMessage!, style: AppTheme.bodySmall)
+                else if (data != null) ...[
+                  Container(
+                    height: 260,
+                    padding: const EdgeInsets.all(AppTheme.spacingMd),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      border: Border.all(color: AppTheme.borderColor),
                     ),
-                    const SizedBox(height: AppTheme.spacingSm),
-                    Text(_data!.message, style: AppTheme.bodySmall),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingMd),
-              ..._data!.series.map(
-                (day) => Container(
-                  margin: const EdgeInsets.only(bottom: AppTheme.spacingSm),
-                  padding: const EdgeInsets.all(AppTheme.spacingMd),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    border: Border.all(color: AppTheme.borderColor),
+                    child: _NetPointsLineChart(series: data.series),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(day.date, style: AppTheme.headingSmall),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Focus: ${day.focusSessionsCount} sessions, ${day.focusMinutes} min, +${day.focusPointsGained} pts',
-                        style: AppTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Blocks: ${day.blockScreensCount}, -${day.pointsLost} pts, Net: ${day.netPoints}',
-                        style: AppTheme.bodySmall,
-                      ),
-                    ],
+                  const SizedBox(height: AppTheme.spacingMd),
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.spacingMd),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Trend: ${data.trend.toUpperCase()}',
+                          style: AppTheme.headingSmall,
+                        ),
+                        const SizedBox(height: AppTheme.spacingSm),
+                        Text(data.message, style: AppTheme.bodySmall),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ],
-          ],
-        ),
+                  const SizedBox(height: AppTheme.spacingMd),
+                  ...data.series.map(
+                    (day) => Container(
+                      margin: const EdgeInsets.only(bottom: AppTheme.spacingSm),
+                      padding: const EdgeInsets.all(AppTheme.spacingMd),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceColor,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        border: Border.all(color: AppTheme.borderColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(day.date, style: AppTheme.headingSmall),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Focus: ${day.focusSessionsCount} sessions, ${day.focusMinutes} min, +${day.focusPointsGained} pts',
+                            style: AppTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Blocks: ${day.blockScreensCount}, -${day.pointsLost} pts, Net: ${day.netPoints}',
+                            style: AppTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
