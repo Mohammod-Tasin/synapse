@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
-import 'package:no_to_distraction/widgets/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({super.key});
@@ -110,10 +110,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppTheme.spacingLg),
-                    Text(
-                      'Verify Your Email',
-                      style: AppTheme.headingLarge,
-                    ),
+                    Text('Verify Your Email', style: AppTheme.headingLarge),
                     const SizedBox(height: AppTheme.spacingSm),
                     Text(
                       email.isEmpty

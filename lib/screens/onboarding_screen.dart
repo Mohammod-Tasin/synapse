@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:no_to_distraction/models/user.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
-import 'package:no_to_distraction/widgets/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 import 'package:no_to_distraction/widgets/synapse_illustrations.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -45,20 +45,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           hour: _studyStart.hour,
           minute: _studyStart.minute,
         ),
-        endTime: AppTimeOfDay(
-          hour: _studyEnd.hour,
-          minute: _studyEnd.minute,
-        ),
+        endTime: AppTimeOfDay(hour: _studyEnd.hour, minute: _studyEnd.minute),
       ),
       sleepTime: TimeRange(
         startTime: AppTimeOfDay(
           hour: _sleepStart.hour,
           minute: _sleepStart.minute,
         ),
-        endTime: AppTimeOfDay(
-          hour: _sleepEnd.hour,
-          minute: _sleepEnd.minute,
-        ),
+        endTime: AppTimeOfDay(hour: _sleepEnd.hour, minute: _sleepEnd.minute),
       ),
       institutionTime: TimeRange(
         startTime: AppTimeOfDay(
@@ -74,9 +68,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
     final success = await authProvider.submitOnboarding(data: data);
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile setup complete!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile setup complete!')));
     }
   }
 
@@ -115,10 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               children: [
                 // ── Dot indicators ──
                 const SizedBox(height: AppTheme.spacingLg),
-                _DotIndicator(
-                  count: 3,
-                  current: _currentPage,
-                ),
+                _DotIndicator(count: 3, current: _currentPage),
                 const SizedBox(height: AppTheme.spacingMd),
 
                 // ── PageView ──
@@ -181,7 +172,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           Expanded(
                             flex: 2,
                             child: GradientButton(
-                              label: _currentPage < 2 ? 'Continue' : 'Get Started →',
+                              label: _currentPage < 2
+                                  ? 'Continue'
+                                  : 'Get Started →',
                               isLoading: authProvider.isLoading,
                               onPressed: authProvider.isLoading
                                   ? null
@@ -249,7 +242,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               min: 15,
               max: 960,
               divisions: 63,
-              onChanged: (v) => _safeSetState(() => _dailyFocusGoal = v.toInt()),
+              onChanged: (v) =>
+                  _safeSetState(() => _dailyFocusGoal = v.toInt()),
             ),
           ),
           Row(
@@ -370,9 +364,7 @@ class _OnboardingPage extends StatelessWidget {
           illustration,
           const SizedBox(height: AppTheme.spacingLg),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingLg,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingLg),
             child: Column(
               children: [
                 Text(

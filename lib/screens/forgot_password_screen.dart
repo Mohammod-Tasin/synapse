@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
-import 'package:no_to_distraction/widgets/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -43,9 +43,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _successScale = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _successAnimCtrl, curve: Curves.elasticOut),
     );
-    _successFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _successAnimCtrl, curve: Curves.easeIn),
-    );
+    _successFade = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _successAnimCtrl, curve: Curves.easeIn));
   }
 
   @override
@@ -108,8 +109,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     }
     if (!_isPasswordStrong(newPassword)) {
       setState(() {
-        _error =
-            'Password must be 8+ characters with uppercase and a number';
+        _error = 'Password must be 8+ characters with uppercase and a number';
       });
       return;
     }
@@ -131,7 +131,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset successful. Please login.')),
+        const SnackBar(
+          content: Text('Password reset successful. Please login.'),
+        ),
       );
       Navigator.of(context).pop();
     } catch (e) {
@@ -162,8 +164,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                   height: 42,
                   decoration: BoxDecoration(
                     color: AppTheme.inputFillColor,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusSm),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                     border: Border.all(color: AppTheme.borderColor),
                   ),
                   child: const Icon(
@@ -193,8 +194,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     scale: _successScale,
                     child: Container(
                       padding: const EdgeInsets.all(AppTheme.spacingMd),
-                      margin: const EdgeInsets.only(
-                          bottom: AppTheme.spacingMd),
+                      margin: const EdgeInsets.only(bottom: AppTheme.spacingMd),
                       decoration: AppTheme.softCard(
                         color: AppTheme.successColor.withValues(alpha: 0.08),
                       ),
@@ -203,8 +203,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.successColor
-                                  .withValues(alpha: 0.15),
+                              color: AppTheme.successColor.withValues(
+                                alpha: 0.15,
+                              ),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -216,8 +217,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                           const SizedBox(width: AppTheme.spacingMd),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Email sent!',
@@ -272,8 +272,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                                 FormInputField(
                                   label: 'Reset Code',
                                   hint: '6-digit code',
-                                  prefixIcon:
-                                      Icons.verified_user_outlined,
+                                  prefixIcon: Icons.verified_user_outlined,
                                   keyboardType: TextInputType.number,
                                   controller: _codeController,
                                   validator: (_) => null,

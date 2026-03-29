@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:no_to_distraction/models/user.dart';
 import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
-import 'package:no_to_distraction/widgets/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/form_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,15 +54,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (data != null && mounted) {
         _safeSetState(() {
           _dailyFocusGoal = data.dailyFocusGoalMinutes;
-          
-          _studyStart = TimeOfDay(hour: data.studyTime.startTime.hour, minute: data.studyTime.startTime.minute);
-          _studyEnd = TimeOfDay(hour: data.studyTime.endTime.hour, minute: data.studyTime.endTime.minute);
-          
-          _sleepStart = TimeOfDay(hour: data.sleepTime.startTime.hour, minute: data.sleepTime.startTime.minute);
-          _sleepEnd = TimeOfDay(hour: data.sleepTime.endTime.hour, minute: data.sleepTime.endTime.minute);
-          
-          _institutionStart = TimeOfDay(hour: data.institutionTime.startTime.hour, minute: data.institutionTime.startTime.minute);
-          _institutionEnd = TimeOfDay(hour: data.institutionTime.endTime.hour, minute: data.institutionTime.endTime.minute);
+
+          _studyStart = TimeOfDay(
+            hour: data.studyTime.startTime.hour,
+            minute: data.studyTime.startTime.minute,
+          );
+          _studyEnd = TimeOfDay(
+            hour: data.studyTime.endTime.hour,
+            minute: data.studyTime.endTime.minute,
+          );
+
+          _sleepStart = TimeOfDay(
+            hour: data.sleepTime.startTime.hour,
+            minute: data.sleepTime.startTime.minute,
+          );
+          _sleepEnd = TimeOfDay(
+            hour: data.sleepTime.endTime.hour,
+            minute: data.sleepTime.endTime.minute,
+          );
+
+          _institutionStart = TimeOfDay(
+            hour: data.institutionTime.startTime.hour,
+            minute: data.institutionTime.startTime.minute,
+          );
+          _institutionEnd = TimeOfDay(
+            hour: data.institutionTime.endTime.hour,
+            minute: data.institutionTime.endTime.minute,
+          );
         });
       }
     } catch (e) {
@@ -86,21 +104,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final data = OnboardingData(
         dailyFocusGoalMinutes: _dailyFocusGoal,
         studyTime: TimeRange(
-          startTime: AppTimeOfDay(hour: _studyStart.hour, minute: _studyStart.minute),
+          startTime: AppTimeOfDay(
+            hour: _studyStart.hour,
+            minute: _studyStart.minute,
+          ),
           endTime: AppTimeOfDay(hour: _studyEnd.hour, minute: _studyEnd.minute),
         ),
         sleepTime: TimeRange(
-          startTime: AppTimeOfDay(hour: _sleepStart.hour, minute: _sleepStart.minute),
+          startTime: AppTimeOfDay(
+            hour: _sleepStart.hour,
+            minute: _sleepStart.minute,
+          ),
           endTime: AppTimeOfDay(hour: _sleepEnd.hour, minute: _sleepEnd.minute),
         ),
         institutionTime: TimeRange(
-          startTime: AppTimeOfDay(hour: _institutionStart.hour, minute: _institutionStart.minute),
-          endTime: AppTimeOfDay(hour: _institutionEnd.hour, minute: _institutionEnd.minute),
+          startTime: AppTimeOfDay(
+            hour: _institutionStart.hour,
+            minute: _institutionStart.minute,
+          ),
+          endTime: AppTimeOfDay(
+            hour: _institutionEnd.hour,
+            minute: _institutionEnd.minute,
+          ),
         ),
       );
 
       await _apiService.submitOnboarding(data: data);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Settings saved successfully!')),
@@ -147,21 +177,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: AppTheme.spacingMd),
                     ],
 
-                    Text(
-                      'Daily Focus Goal',
-                      style: AppTheme.headingSmall,
-                    ),
+                    Text('Daily Focus Goal', style: AppTheme.headingSmall),
                     const SizedBox(height: AppTheme.spacingSm),
                     _buildFocusGoalContent(),
-                    
+
                     const SizedBox(height: AppTheme.spacingXl),
 
-                    Text(
-                      'Your Schedule',
-                      style: AppTheme.headingSmall,
-                    ),
+                    Text('Your Schedule', style: AppTheme.headingSmall),
                     const SizedBox(height: AppTheme.spacingMd),
-                    
+
                     TimeRangePickerWidget(
                       label: 'Study Hours',
                       startTime: _studyStart,
@@ -172,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }),
                     ),
                     const SizedBox(height: AppTheme.spacingMd),
-                    
+
                     TimeRangePickerWidget(
                       label: 'Sleep Time',
                       startTime: _sleepStart,
@@ -211,9 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildFocusGoalContent() {
     return Container(
-      decoration: AppTheme.softCard(
-        color: AppTheme.surfaceColor,
-      ),
+      decoration: AppTheme.softCard(color: AppTheme.surfaceColor),
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       child: Column(
         children: [
@@ -255,7 +277,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               min: 15,
               max: 960,
               divisions: 63,
-              onChanged: (v) => _safeSetState(() => _dailyFocusGoal = v.toInt()),
+              onChanged: (v) =>
+                  _safeSetState(() => _dailyFocusGoal = v.toInt()),
             ),
           ),
           Row(

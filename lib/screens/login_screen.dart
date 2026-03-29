@@ -8,7 +8,8 @@ import 'package:email_validator/email_validator.dart';
 import 'package:no_to_distraction/providers/auth_provider.dart';
 import 'package:no_to_distraction/config/app_config.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
-import 'package:no_to_distraction/widgets/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/form_widgets.dart';
+import 'package:no_to_distraction/widgets/common/social_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,9 +40,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login successful!')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login successful!')));
       return;
     }
 
@@ -52,7 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.of(context).pushNamed('/verify-email');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please verify your email. A code can be resent there.'),
+          content: Text(
+            'Please verify your email. A code can be resent there.',
+          ),
         ),
       );
     }
@@ -127,7 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             controller: _emailController,
                             validator: (value) {
-                              if (value?.isEmpty ?? true) return 'Email is required';
+                              if (value?.isEmpty ?? true)
+                                return 'Email is required';
                               if (!EmailValidator.validate(value!)) {
                                 return 'Enter a valid email';
                               }
@@ -143,7 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordController,
                             obscureText: true,
                             validator: (value) {
-                              if (value?.isEmpty ?? true) return 'Password is required';
+                              if (value?.isEmpty ?? true)
+                                return 'Password is required';
                               return null;
                             },
                           ),
@@ -154,21 +159,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               GestureDetector(
-                                onTap: () => setState(
-                                  () => _rememberMe = !_rememberMe,
-                                ),
+                                onTap: () =>
+                                    setState(() => _rememberMe = !_rememberMe),
                                 child: Row(
                                   children: [
                                     AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
                                       width: 20,
                                       height: 20,
                                       decoration: BoxDecoration(
                                         color: _rememberMe
                                             ? AppTheme.primaryColor
                                             : AppTheme.inputFillColor,
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
                                           color: _rememberMe
                                               ? AppTheme.primaryColor
@@ -194,8 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.of(context)
-                                      .pushNamed('/forgot-password');
+                                  Navigator.of(
+                                    context,
+                                  ).pushNamed('/forgot-password');
                                 },
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
@@ -255,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: AppTheme.spacingMd),
 
                           // ── Google stub button ──
-                          _SocialButton(
+                          SocialButton(
                             label: 'Continue with Google',
                             icon: Icons.g_mobiledata_rounded,
                             iconColor: const Color(0xFF4285F4),
@@ -279,13 +285,9 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    "Don't have an account?  ",
-                    style: AppTheme.bodySmall,
-                  ),
+                  Text("Don't have an account?  ", style: AppTheme.bodySmall),
                   GestureDetector(
-                    onTap: () =>
-                        Navigator.of(context).pushNamed('/signup'),
+                    onTap: () => Navigator.of(context).pushNamed('/signup'),
                     child: Text(
                       'Create one',
                       style: GoogleFonts.inter(
@@ -306,47 +308,4 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Soft social login button (decorative — not wired to any OAuth).
-class _SocialButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-  final VoidCallback onTap;
 
-  const _SocialButton({
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: AppTheme.inputFillColor,
-          borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-          border: Border.all(color: AppTheme.borderColor, width: 1),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(width: AppTheme.spacingSm),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: AppTheme.textPrimaryColor,
-                fontWeight: FontWeight.w500,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

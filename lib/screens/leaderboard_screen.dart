@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:no_to_distraction/models/stats.dart';
 import 'package:no_to_distraction/services/api_service.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
+import 'package:no_to_distraction/widgets/leaderboard/current_user_rank_card.dart';
+import 'package:no_to_distraction/widgets/leaderboard/leaderboard_entry_tile.dart';
 
 class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
@@ -72,57 +74,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             else if (_error != null)
               Text(_error!, style: AppTheme.bodySmall)
             else if (_data != null) ...[
-              Container(
-                padding: const EdgeInsets.all(AppTheme.spacingMd),
-                decoration: AppTheme.softCard(color: AppTheme.inputFillColor),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Rank: ${_data!.currentUserRank}',
-                      style: AppTheme.headingSmall,
-                    ),
-                    const SizedBox(height: AppTheme.spacingSm),
-                    Text(
-                      'Your Points: ${_data!.currentUserPoints}',
-                      style: AppTheme.bodyLarge,
-                    ),
-                  ],
-                ),
+              CurrentUserRankCard(
+                rank: _data!.currentUserRank,
+                points: _data!.currentUserPoints,
               ),
               const SizedBox(height: AppTheme.spacingMd),
               ..._data!.leaderboard.map(
-                (entry) => Container(
-                  margin: const EdgeInsets.only(bottom: AppTheme.spacingSm),
-                  padding: const EdgeInsets.all(AppTheme.spacingMd),
-                  decoration: AppTheme.softCard(),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 36,
-                        child: Text(
-                          '#${entry.rank}',
-                          style: AppTheme.bodyLarge,
-                        ),
-                      ),
-                      const SizedBox(width: AppTheme.spacingMd),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(entry.name, style: AppTheme.headingSmall),
-                            const SizedBox(height: 2),
-                            Text(entry.email, style: AppTheme.bodySmall),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '${entry.totalPoints} pts',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
+                (entry) => LeaderboardEntryTile(entry: entry),
               ),
             ],
           ],
