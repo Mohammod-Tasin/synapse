@@ -10,7 +10,6 @@ import 'package:no_to_distraction/providers/stats_provider.dart';
 import 'package:no_to_distraction/config/app_config.dart';
 import 'package:no_to_distraction/theme/app_theme.dart';
 import 'package:no_to_distraction/widgets/common/form_widgets.dart';
-import 'package:no_to_distraction/widgets/common/social_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -158,49 +156,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: AppTheme.spacingSm),
 
-                          // ── Remember me + Forgot password ──
+                          // ── Forgot password ──
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _rememberMe = !_rememberMe),
-                                child: Row(
-                                  children: [
-                                    AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                      width: 20,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: _rememberMe
-                                            ? AppTheme.primaryColor
-                                            : AppTheme.inputFillColor,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color: _rememberMe
-                                              ? AppTheme.primaryColor
-                                              : AppTheme.borderColor,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: _rememberMe
-                                          ? const Icon(
-                                              Icons.check,
-                                              size: 12,
-                                              color: Colors.white,
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Remember me',
-                                      style: AppTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
                               TextButton(
                                 onPressed: () {
                                   Navigator.of(
@@ -236,47 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: AppTheme.spacingLg),
 
-                          // ── Divider ──
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Divider(
-                                  color: AppTheme.borderColor,
-                                  thickness: 1,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppTheme.spacingMd,
-                                ),
-                                child: Text(
-                                  'or continue with',
-                                  style: AppTheme.bodySmall,
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(
-                                  color: AppTheme.borderColor,
-                                  thickness: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppTheme.spacingMd),
 
-                          // ── Google stub button ──
-                          SocialButton(
-                            label: 'Continue with Google',
-                            icon: Icons.g_mobiledata_rounded,
-                            iconColor: const Color(0xFF4285F4),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Google login coming soon'),
-                                ),
-                              );
-                            },
-                          ),
                         ],
                       ),
                     );
