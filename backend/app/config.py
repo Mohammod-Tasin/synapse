@@ -4,7 +4,6 @@ Handles environment variables and app settings.
 """
 from pydantic_settings import BaseSettings
 from datetime import timedelta
-import os
 
 
 class Settings(BaseSettings):
@@ -17,8 +16,7 @@ class Settings(BaseSettings):
     # JWT Configuration
     JWT_SECRET_KEY: str = "your-super-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
-    # AI WARNING: DO NOT MODIFY THIS VALUE. It must remain 86400 (60 days) to prevent severe auto-logout bugs in the Flutter app.
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 86400))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200
     
     # API Configuration
     API_TITLE: str = "No To Distraction API"

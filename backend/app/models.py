@@ -2,7 +2,7 @@
 MongoDB models and schemas using PyMongo.
 Defines the User document structure with onboarding data.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -52,8 +52,8 @@ class User:
         self.password_reset_code_hash = password_reset_code_hash
         self.password_reset_expires_at = password_reset_expires_at
         self.password_reset_attempts = password_reset_attempts
-        self.created_at = created_at or datetime.utcnow()
-        self.updated_at = updated_at or datetime.utcnow()
+        self.created_at = created_at or datetime.now(timezone.utc)
+        self.updated_at = updated_at or datetime.now(timezone.utc)
         
         # Onboarding Fields
         self.daily_focus_goal_minutes = daily_focus_goal_minutes

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, timezone
 from fastapi import APIRouter, Depends, status
 from app.database import get_database
 from app.schemas import (
@@ -30,7 +30,7 @@ async def log_focus_session_event(
     user_object_id = to_object_id(current_user["user_id"])
     ensure_user_points_fields(db, user_object_id)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start_at = request.started_at or now
     end_at = start_at + timedelta(minutes=request.duration_minutes)
     points_delta = request.duration_minutes
@@ -74,7 +74,7 @@ async def log_block_screen_event(
     user_object_id = to_object_id(current_user["user_id"])
     ensure_user_points_fields(db, user_object_id)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     points_delta = -request.points_penalty
 
     db.block_events.insert_one({
@@ -112,7 +112,7 @@ async def get_today_stats(current_user: dict = Depends(get_current_user)):
     user_object_id = to_object_id(current_user["user_id"])
     user_doc = ensure_user_points_fields(db, user_object_id)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     today_start = datetime.combine(now.date(), time.min)
     tomorrow_start = today_start + timedelta(days=1)
     stats = aggregate_day_stats(db, user_object_id, today_start, tomorrow_start)
@@ -146,7 +146,7 @@ async def get_analytics(
     user_object_id = to_object_id(current_user["user_id"])
     ensure_user_points_fields(db, user_object_id)
 
-    now = datetime.utcnow().date()
+    now = datetime.now(timezone.utc).date()
     start_day = now - timedelta(days=days - 1)
     series_raw = []
 

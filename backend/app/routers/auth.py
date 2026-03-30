@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status
 from app.database import get_database
 from app.schemas import (
@@ -40,7 +40,7 @@ async def register(request: RegisterRequest):
                 "$set": {
                     "hashed_password": get_password_hash(request.password),
                     "name": request.name,
-                    "updated_at": datetime.utcnow(),
+                    "updated_at": datetime.now(timezone.utc),
                 }
             }
         )
@@ -167,7 +167,7 @@ async def verify_email(request: VerifyEmailRequest):
             detail="Verification code is not available. Please register again."
         )
 
-    if datetime.utcnow() > expires_at:
+    if datetime.now(timezone.utc) > expires_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification code expired. Please register again."
@@ -191,7 +191,7 @@ async def verify_email(request: VerifyEmailRequest):
         {
             "$set": {
                 "email_verified": True,
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(timezone.utc),
             },
             "$unset": {
                 "email_verification_code_hash": "",
@@ -307,7 +307,7 @@ async def reset_password(request: ResetPasswordRequest):
             detail="Reset code is not available. Please request a new code."
         )
 
-    if datetime.utcnow() > expires_at:
+    if datetime.now(timezone.utc) > expires_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset code expired. Please request a new code."
@@ -331,7 +331,7 @@ async def reset_password(request: ResetPasswordRequest):
         {
             "$set": {
                 "hashed_password": get_password_hash(request.new_password),
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(timezone.utc),
             },
             "$unset": {
                 "password_reset_code_hash": "",

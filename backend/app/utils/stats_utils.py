@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from fastapi import HTTPException, status
 
@@ -32,7 +32,7 @@ def ensure_user_points_fields(db, user_object_id: ObjectId) -> dict:
             set_defaults[field] = 0
 
     if set_defaults:
-        set_defaults["updated_at"] = datetime.utcnow()
+        set_defaults["updated_at"] = datetime.now(timezone.utc)
         db.users.update_one(
             {"_id": user_object_id},
             {"$set": set_defaults}

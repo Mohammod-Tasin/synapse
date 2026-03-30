@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from bson.objectid import ObjectId
 from app.database import get_database
@@ -59,7 +59,7 @@ async def update_onboarding(
         "institution_time_start": request.institution_time_start,
         "institution_time_end": request.institution_time_end,
         "onboarding_completed": True,
-        "updated_at": datetime.utcnow()
+        "updated_at": datetime.now(timezone.utc)
     }
     
     result = db.users.update_one(
