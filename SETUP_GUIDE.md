@@ -1,409 +1,182 @@
-# No To Distraction - Setup & Integration Guide
+# No To Distraction (Synapse) - Setup & Integration Guide
 
-Complete production-ready authentication and onboarding system for Flutter + FastAPI + MongoDB.
+Comprehensive documentation for the 'Synapse' project—a cross-platform productivity application featuring short-form video addiction mitigation (Block & Deduct), secure authentication, and gamification.
 
 ## Overview
 
-This full-stack application provides:
-- **Backend (Python FastAPI)**: Secure REST API with JWT authentication, bcrypt password hashing, and MongoDB integration
-- **Frontend (Flutter)**: Modern UI with secure token storage, state management using Provider, and comprehensive onboarding flow
-- **Authentication Flow**: Splash → Login/Signup → Onboarding → Home
-- **Security**: JWT tokens, password hashing, secure storage, form validation
-
-## Project Structure
-
-```
-no_to_distraction/
-├── backend/                      # FastAPI backend
-│   ├── app/
-│   │   ├── main.py              # FastAPI application & endpoints
-│   │   ├── config.py            # Configuration & settings
-│   │   ├── database.py          # MongoDB connection
-│   │   ├── models.py            # User model
-│   │   ├── schemas.py           # Pydantic validation schemas
-│   │   ├── auth.py              # JWT & password utilities
-│   │   └── __init__.py
-│   ├── requirements.txt          # Python dependencies
-│   ├── .env                      # Environment variables
-│   └── main.py                   # Entry point
-│
-└── lib/                           # Flutter frontend
-    ├── config/
-    │   └── app_config.dart       # Constants & configuration
-    ├── models/
-    │   ├── user.dart             # User & onboarding models
-    │   └── auth.dart             # Auth request/response models
-    ├── services/
-    │   ├── api_service.dart      # HTTP client & API calls
-    │   └── secure_storage_service.dart  # Secure token storage
-    ├── providers/
-    │   └── auth_provider.dart    # Auth state management
-    ├── screens/
-    │   ├── splash_screen.dart
-    │   ├── login_screen.dart
-    │   ├── signup_screen.dart
-    │   ├── onboarding_screen.dart
-    │   └── home_screen.dart
-    ├── widgets/
-    │   └── form_widgets.dart     # Reusable widgets
-    ├── theme/
-    │   └── app_theme.dart        # App theming
-    └── main.dart                 # App entry point
-```
-
-## Backend Setup
-
-### Prerequisites
-- Python 3.10+
-- MongoDB (local or cloud - MongoDB Atlas)
-
-### Installation
-
-1. **Set up Python environment**:
-```bash
-cd backend
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-```
-
-2. **Install dependencies**:
-```bash
-pip install -r requirements.txt
-```
-
-3. **Configure MongoDB**:
-   - **Local MongoDB**: Start your MongoDB server (default: `mongodb://localhost:27017`)
-   - **MongoDB Atlas** (cloud): Update `MONGODB_URL` in `.env` with your connection string
-
-4. **Update `.env` file**:
-```env
-MONGODB_URL=mongodb://localhost:27017
-DATABASE_NAME=no_to_distraction_db
-JWT_SECRET_KEY=your-super-secret-key-change-in-production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
-> ⚠️ **Important**: Change `JWT_SECRET_KEY` to a secure random string in production!
-
-5. **Run the server**:
-```bash
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The API will be available at `http://localhost:8000`.
-
-**API Documentation** (auto-generated):
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## Backend API Endpoints
-
-### Authentication
-
-**Register User** `POST /api/v1/auth/register`
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123",
-  "name": "John Doe"
-}
-```
-
-**Login User** `POST /api/v1/auth/login`
-```json
-{
-  "email": "user@example.com",
-  "password": "SecurePass123"
-}
-```
-
-**Response**:
-```json
-{
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-  "token_type": "bearer",
-  "user": {
-    "id": "507f1f77bcf86cd799439011",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "onboarding_completed": false,
-    "created_at": "2026-03-18T10:00:00"
-  }
-}
-```
-
-### Onboarding
-
-**Submit Preferences** `POST /api/v1/onboarding` (Protected)
-```json
-{
-  "daily_focus_goal_minutes": 120,
-  "study_time_start": "09:00",
-  "study_time_end": "17:00",
-  "sleep_time_start": "22:00",
-  "sleep_time_end": "07:00",
-  "institution_time_start": "09:00",
-  "institution_time_end": "17:00"
-}
-```
-
-**Headers**:
-```
-Authorization: Bearer <access_token>
-Content-Type: application/json
-```
-
-## Frontend Setup
-
-### Prerequisites
-- Flutter SDK 3.10+
-- A mobile device or emulator
-
-### Installation
-
-1. **Get dependencies**:
-```bash
-flutter pub get
-```
-
-2. **Update API Base URL** (if not using localhost):
-   - Edit `lib/config/app_config.dart`
-   - Update `baseUrl` to your backend URL:
-   ```dart
-   static const String baseUrl = 'http://your-backend-url:8000/api/v1';
-   ```
-
-3. **Run the app**:
-```bash
-# Android emulator or device
-flutter run -d emulator-5554
-
-# iOS simulator or device
-flutter run -d all
-
-# Web
-flutter run -d chrome
-
-# Specific device
-flutter devices  # List available devices
-flutter run -d <device_id>
-```
-
-### Build for Production
-
-**Android**:
-```bash
-flutter build apk --release
-# Or for App Bundle:
-flutter build appbundle --release
-```
-
-**iOS**:
-```bash
-flutter build ios --release
-```
-
-**Web**:
-```bash
-flutter build web --release
-```
-
-## Frontend Architecture
-
-### State Management (Provider)
-The app uses `Provider` for state management with a single `AuthProvider` that manages:
-- User authentication state
-- Login/signup/logout actions
-- Onboarding completion
-- Error handling
-- Loading states
-
-### Security Features
-- **Secure Token Storage**: Tokens stored using `flutter_secure_storage` (encrypted)
-- **JWT Authentication**: All API requests include bearer token
-- **Password Validation**: 
-  - Min 8 characters
-  - At least 1 uppercase letter
-  - At least 1 number
-  - Real-time strength indicator
-- **Email Validation**: RFC 5322 compliant email validation
-- **Form Validation**: Client-side validation on all inputs
-
-### Navigation Flow
-```
-Splash Screen (Loading)
-    ↓
-[Check Authentication]
-    ├─ Not Authenticated → Login Screen
-    │   ├─ New User → Signup Screen → Onboarding Screen
-    │   └─ Existing User → Home Screen
-    │
-    ├─ Authenticated, Not Onboarded → Onboarding Screen
-    │   └─ After Onboarding → Home Screen
-    │
-    └─ Fully Authenticated → Home Screen
-```
-
-## Testing the Integration
-
-### Manual Testing Steps
-
-1. **Start the backend**:
-```bash
-cd backend
-venv\Scripts\activate  # or source venv/bin/activate
-python -m uvicorn app.main:app --reload
-```
-
-2. **Open API docs**:
-   - Navigate to `http://localhost:8000/docs`
-   - Test endpoints manually
-
-3. **Start the Flutter app**:
-```bash
-flutter run
-```
-
-4. **Test Flow**:
-   - **Sign up**: Enter name, email, password
-   - **Verify**: Check password strength indicator
-   - **Onboarding**: Set focus goals and schedule
-   - **Home**: View welcome screen and quick actions
-   - **Logout**: Use menu to logout and return to login
-
-### Common Issues & Solutions
-
-**Issue**: "Connection refused" error
-- **Solution**: Ensure backend is running on `localhost:8000`
-- Update `AppConfig.baseUrl` to match your backend URL
-
-**Issue**: "Invalid email" validation
-- **Solution**: Enter a valid email format (e.g., user@example.com)
-
-**Issue**: "Password must contain..." error
-- **Solution**: Password needs uppercase, lowercase, and number (min 8 chars)
-
-**Issue**: MongoDB connection error
-- **Solution**: 
-  - Ensure MongoDB is running: `mongod`
-  - Or update `MONGODB_URL` in `.env` with your MongoDB Atlas connection string
-
-**Issue**: Token expiration (401 error after 30 mins)
-- **Solution**: User will be automatically logged out and redirected to login screen
-- Update `ACCESS_TOKEN_EXPIRE_MINUTES` in `.env` to extend session duration
-
-## Production Considerations
-
-### Backend
-1. **Change JWT Secret**: Generate a random 32+ character string
-   ```python
-   import secrets
-   secrets.token_urlsafe(32)
-   ```
-
-2. **CORS Configuration**: Restrict to your frontend URL:
-   ```python
-   app.add_middleware(
-       CORSMiddleware,
-       allow_origins=["https://yourfrontend.com"],
-       ...
-   )
-   ```
-
-3. **Environment Variables**: Use a secret manager (e.g., AWS Secrets Manager, HashiCorp Vault)
-
-4. **Database Security**:
-   - Enable MongoDB authentication
-   - Use encrypted connections (TLS)
-   - Create database indexes for performance
-
-5. **Rate Limiting**: Add rate limiting to prevent brute force attacks
-   ```python
-   from slowapi import Limiter
-   limiter = Limiter(key_func=get_remote_address)
-   ```
-
-6. **API Versioning**: Already implemented (`/api/v1/`)
-
-7. **Logging & Monitoring**: Use cloud logging (e.g., CloudWatch, DataDog)
-
-### Frontend
-1. **API Base URL**: Use environment-specific URLs
-   ```dart
-   static const String baseUrl = const bool.fromEnvironment('API_URL') 
-       ?? 'https://api.productionh.com/api/v1';
-   ```
-
-2. **Build Optimization**: Enable code obfuscation
-   ```bash
-   flutter build apk --obfuscate --split-debug-info=build/app/outputs/symbols
-   ```
-
-3. **Offline Support**: Add offline caching with `hive_flutter`
-
-4. **Crash Reporting**: Integrate `firebase_crashlytics` or `sentry_flutter`
-
-## Next Steps
-
-1. **Add more features**:
-   - Profile management screen
-   - Focus timer functionality
-   - Analytics/statistics dashboard
-   - Notification system
-   - Push notifications for reminders
-
-2. **Enhance security**:
-   - Two-factor authentication (2FA)
-   - Email verification
-   - Password reset functionality
-   - Device-based authentication
-
-3. **Optimize performance**:
-   - Add caching strategies
-   - Implement pagination for data
-   - Optimize database queries with proper indexing
-
-4. **Add testing**:
-   - Unit tests for models and services
-   - Widget tests for UI components
-   - Integration tests for auth flow
-   - Backend API tests with pytest
-
-## Support & Resources
-
-### Official Documentation
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [Flutter](https://flutter.dev/docs)
-- [MongoDB](https://docs.mongodb.com/)
-- [JWT](https://jwt.io/)
-- [Provider Package](https://pub.dev/packages/provider)
-
-### Key Dependencies Used
-
-**Backend**:
-- FastAPI 0.104.1
-- Pydantic 2.5.0
-- PyMongo 4.6.0
-- python-jose[cryptography] 3.3.0
-- passlib[bcrypt] 1.7.4
-
-**Frontend**:
-- provider: ^6.4.0
-- http: ^1.1.0
-- flutter_secure_storage: ^9.0.0
-- email_validator: ^2.1.17
-- shared_preferences: ^2.2.2
-
-## License
-
-This project is provided as-is for educational and development purposes.
+Synapse is a multi-layered ecosystem designed to reduce cognitive load and enhance focus:
+- **Backend (Python FastAPI)**: High-performance, modular API with JWT persistence (30 days), timezone-aware datetime logic, and MongoDB Atlas/Local support.
+- **Frontend (Flutter)**: Modern, ultra-minimalist UI with state management via Provider and secure local storage.
+- **Native Engine (Android/Kotlin)**: Modularized Accessibility Service for real-time app scanning, detection (Reels/Shorts), and point-based screen blocking.
 
 ---
 
-**Created**: March 18, 2026  
-**Version**: 1.0.0  
-**Status**: Production Ready
+## Current Project Structure
+
+### 1. Backend (FastAPI)
+The backend uses a modular, scalable router-based architecture:
+```
+backend/
+├── app/
+│   ├── routers/             # API Endpoint Modules
+│   │   ├── auth.py         # Registration, Login, Email Verification
+│   │   ├── stats.py        # Focus Sessions, Block Events, Analytics
+│   │   ├── onboarding.py   # User Preference Management
+│   │   └── leaderboard.py  # Global Ranking Calculations
+│   ├── utils/              # Business Logic & Helpers
+│   │   ├── auth_utils.py   # Token generation & verification logic
+│   │   └── stats_utils.py  # Data aggregation & analytics processing
+│   ├── models/             # Database Document Definitions
+│   ├── schemas/            # Pydantic Request/Response Validation
+│   ├── core/               # App Lifecycle & Global Constants
+│   ├── db/                 # MongoDB Database Connection
+│   ├── auth.py             # Security Configuration (JWT, Bcrypt)
+│   ├── config.py           # Environment-based Application Settings
+│   ├── email_service.py    # SMTP Integration for Communications
+│   └── main.py             # FastAPI entry point & Middleware setup
+├── .env                    # Deployment Environment Variables
+└── requirements.txt        # Python Dependency Management
+```
+
+### 2. Frontend (Flutter)
+A clean, service-oriented architecture:
+```
+lib/
+├── config/                 # Application Constants (API URLs)
+├── services/               # Shared logic (API Client, Secure Storage)
+├── providers/              # Global State (Auth, Permissions, Theme)
+├── models/                 # Dart Data Objects
+├── screens/                # UI Layer (Auth, Onboarding, Home)
+├── widgets/                # Atomic UI Components & Common Elements
+└── main.dart               # App initialization (Services & Bridges)
+```
+
+### 3. Native Android (Kotlin)
+The heavy-lifting engine for monitoring and blocking:
+```
+android/app/src/main/kotlin/com/example/no_to_distraction/
+├── ShortVideoAccessibilityService.kt  # Main monitoring service
+├── ScannerEngine.kt                   # Reels/Shorts detection algorithm
+├── OverlayManager.kt                  # UI blocking (System Alerts)
+├── StorageManager.kt                  # Native-side persistence
+├── ReelDetectionChannelBridge.kt      # MethodChannel Bridges
+└── MainActivity.kt                    # Platform-side bridge initialization
+```
+
+---
+
+## Environment Setup
+
+### 1. Backend Configuration
+**Prerequisites**: Python 3.12+ (confirmed compatible up to 3.14) and MongoDB (Atlas or Local).
+
+1. **Virtual Environment**:
+   ```bash
+   cd backend
+   python -m venv .venv
+   .venv\Scripts\activate  # Windows
+   ```
+
+2. **Installation**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Environment Variables (`.env`)**:
+   Create a `.env` in the `backend/` directory:
+   ```env
+   # Database Configurations
+   MONGODB_URL=mongodb+srv://<user>:<password>@cluster0.mongodb.net/
+   DATABASE_NAME=no_to_distraction_db
+
+   # Security (JWT)
+   JWT_SECRET_KEY=YOUR_SECURE_32_CHAR_SECRET
+   JWT_ALGORITHM=HS256
+   ACCESS_TOKEN_EXPIRE_MINUTES=43200  # 30 Days persistence
+
+   # SMTP Setup (Gmail Example)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=465
+   SMTP_USERNAME=your-email@gmail.com
+   SMTP_PASSWORD=your-google-app-password  # REQUIRED: Use 'App Passwords'
+   SMTP_FROM_EMAIL=your-email@gmail.com
+   SMTP_USE_SSL=true
+   ```
+
+4. **Service Execution**:
+   ```bash
+   python -m uvicorn app.main:app --reload --host 0.0.0.0
+   ```
+
+### 2. Frontend Setup
+**Prerequisites**: Flutter 3.10+ (Stable Channel).
+
+1. **Dependencies**:
+   ```bash
+   flutter pub get
+   ```
+
+2. **API Configuration**:
+   Update `lib/config/app_config.dart` with your machine's local IP or production URL:
+   ```dart
+   static const String baseUrl = 'http://192.168.x.x:8000/api/v1'; // Use IP for real devices
+   ```
+
+3. **Execution**:
+   ```bash
+   flutter run
+   ```
+
+---
+
+## Core Mechanism: Block & Deduct
+
+The "Synapse" app's primary feature is the ability to monitor and block distracting short-form video content (Reels/Shorts).
+
+### How it works:
+1. **Detection**: `ScannerEngine` (Native Kotlin) monitors screen activity via Accessibility API.
+2. **Bridge**: If a distracting app/video is detected, a call is made via `MethodChannel` (`synapse/native_channel`) to the Flutter side.
+3. **Validation**: Flutter's `AuthProvider` checks the user's available points and session state.
+4. **Deduction**: Points are deducted on the backend via the `/stats/events/block-screen` endpoint.
+5. **Action**: Flutter directs the Native side to trigger `OverlayManager` to render a minimalist blocking screen.
+
+---
+
+## Critical Permissions (Android Only)
+
+Because this app uses system-level monitoring, the following must be manually enabled:
+
+1. **Accessibility Service**: 
+   - `Settings > Accessibility > Installed Apps > Synapse Accessibility Service`
+   - *Note*: If the "Restricted setting" pop-up appears, go to `App Info > Three-dot Menu > Allow restricted settings`.
+
+2. **Appear on Top (Display over other apps)**: 
+   - Required for `OverlayManager` to show blocking screens while you're in other apps.
+
+---
+
+## Authentication Features
+
+- **JWT Persistence**: Users stay logged in for **30 days** by default.
+- **Email Verification**: Powered by Gmail SMTP (Requires secure App Password).
+- **Timezone Safety**: The entire system uses `datetime.now(timezone.utc)` to ensure analytics and token expirations are consistent globally.
+- **Secure Storage**: JWTs are stored encrypted on the device using `flutter_secure_storage`.
+
+---
+
+## Deployment & Support
+
+### Generation of Production JWT Secret
+```python
+import secrets
+print(secrets.token_urlsafe(32))
+```
+
+### Common Troubleshooting
+- **Backend Connection**: If using an Android emulator, use `http://10.0.2.2:8000` as the API URL.
+- **Blocked Overlay Missing**: Ensure "Display over other apps" is granted in Android system settings.
+- **SMTP Failure**: If emails are not sending, verify that `SMTP_USERNAME` matches the `SMTP_FROM_EMAIL` and that you are using an **App Password**, not your primary Gmail password.
+
+---
+**Last Updated**: March 30, 2026  
+**Status**: Modular Production Ready (v1.2.0)
