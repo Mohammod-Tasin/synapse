@@ -30,6 +30,10 @@ class ShortVideoAccessibilityService : AccessibilityService() {
     private var isShortVideoDetected: Boolean = false
     private var lastProcessedAtMs: Long = 0L
     private var lastPublishedState: Boolean? = null
+    
+    // State to persist comment section opening so deep scrolling won't trigger Reel block
+    private var isCommentSectionOpen: Boolean = false
+    private var lastCommentSectionSeenAtMs: Long = 0L
 
     private val overlayHandler = Handler(Looper.getMainLooper())
     private var blockOverlayView: View? = null
@@ -207,11 +211,19 @@ class ShortVideoAccessibilityService : AccessibilityService() {
                     }
                 }
 
+                // Check for individual comment signatures which are prevalent during deep scrolling
+                if (text == "reply" || desc == "reply" || 
+                    blob.contains("view previous replies") || 
+                    blob.contains("hide replies") || 
+                    blob.contains("view more comments")) {
+                    return true
+                }
+
                 // Check for comment thread headers
                 if (blob.contains("most relevant") ||
                     blob.contains("newest") ||
                     blob.contains("oldest") ||
-                    blob.contains("sort") && blob.contains("comment")
+                    (blob.contains("sort") && blob.contains("comment"))
                 ) {
                     return true
                 }
@@ -239,9 +251,24 @@ class ShortVideoAccessibilityService : AccessibilityService() {
             return true
         }
 
-        // Exclude comment sections early to avoid false positives
-        if (isInCommentSection(rootNode)) {
+        // State persistent logic for Comment Section
+        val currentlyInComment = isInCommentSection(rootNode)
+        
+        if (currentlyInComment) {
+            isCommentSectionOpen = true
+            lastCommentSectionSeenAtMs = SystemClock.elapsedRealtime()
             return false
+        } else if (isCommentSectionOpen) {
+            // We didn't find any comment indicators on this frame.
+            // If the user is scrolling rapidly or comments are loading, indicators might briefly disappear.
+            // We use a 2000ms debounce to prevent false block triggers.
+            if (SystemClock.elapsedRealtime() - lastCommentSectionSeenAtMs < 2000L) {
+                return false
+            } else {
+                // Time expired and no comment nodes found. Safe to assume the bottom sheet is closed.
+                isCommentSectionOpen = false
+                Log.d(TAG, "isCommentSectionOpen timed out -> reset to false")
+            }
         }
 
         val screenWidthPx = getScreenWidthPx()
