@@ -167,6 +167,9 @@ async def verify_email(request: VerifyEmailRequest):
             detail="Verification code is not available. Please register again."
         )
 
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
     if datetime.now(timezone.utc) > expires_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -306,6 +309,9 @@ async def reset_password(request: ResetPasswordRequest):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset code is not available. Please request a new code."
         )
+
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
 
     if datetime.now(timezone.utc) > expires_at:
         raise HTTPException(
