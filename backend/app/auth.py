@@ -57,15 +57,22 @@ def create_access_token(
         The encoded JWT token string
     """
     to_encode = data.copy()
-    
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
-    
-    to_encode.update({"exp": expire})
+
+    now = datetime.now(timezone.utc)
+    token_lifetime = expires_delta or timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    expire = now + token_lifetime
+
+    # Use a UTC Unix timestamp to avoid timezone serialization ambiguity.
+    exp_unix = int(expire.timestamp())
+    to_encode.update({"exp": exp_unix})
+
+    print(
+        f"Generated Token. Now: {now.isoformat()}, "
+        f"Exp: {expire.isoformat()}, Delta: {expire - now}, "
+        f"ExpUnix: {exp_unix}, ConfigMinutes: {settings.ACCESS_TOKEN_EXPIRE_MINUTES}"
+    )
     
     try:
         encoded_jwt = jwt.encode(

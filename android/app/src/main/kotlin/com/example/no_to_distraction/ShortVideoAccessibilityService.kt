@@ -30,10 +30,6 @@ class ShortVideoAccessibilityService : AccessibilityService() {
     private var isShortVideoDetected: Boolean = false
     private var lastProcessedAtMs: Long = 0L
     private var lastPublishedState: Boolean? = null
-    
-    // State to persist comment section opening so deep scrolling won't trigger Reel block
-    private var isCommentSectionOpen: Boolean = false
-    private var lastCommentSectionSeenAtMs: Long = 0L
 
     private val overlayHandler = Handler(Looper.getMainLooper())
     private var blockOverlayView: View? = null
@@ -211,19 +207,11 @@ class ShortVideoAccessibilityService : AccessibilityService() {
                     }
                 }
 
-                // Check for individual comment signatures which are prevalent during deep scrolling
-                if (text == "reply" || desc == "reply" || 
-                    blob.contains("view previous replies") || 
-                    blob.contains("hide replies") || 
-                    blob.contains("view more comments")) {
-                    return true
-                }
-
                 // Check for comment thread headers
                 if (blob.contains("most relevant") ||
                     blob.contains("newest") ||
                     blob.contains("oldest") ||
-                    (blob.contains("sort") && blob.contains("comment"))
+                    blob.contains("sort") && blob.contains("comment")
                 ) {
                     return true
                 }
@@ -251,24 +239,9 @@ class ShortVideoAccessibilityService : AccessibilityService() {
             return true
         }
 
-        // State persistent logic for Comment Section
-        val currentlyInComment = isInCommentSection(rootNode)
-        
-        if (currentlyInComment) {
-            isCommentSectionOpen = true
-            lastCommentSectionSeenAtMs = SystemClock.elapsedRealtime()
+        // Exclude comment sections early to avoid false positives
+        if (isInCommentSection(rootNode)) {
             return false
-        } else if (isCommentSectionOpen) {
-            // We didn't find any comment indicators on this frame.
-            // If the user is scrolling rapidly or comments are loading, indicators might briefly disappear.
-            // We use a 2000ms debounce to prevent false block triggers.
-            if (SystemClock.elapsedRealtime() - lastCommentSectionSeenAtMs < 2000L) {
-                return false
-            } else {
-                // Time expired and no comment nodes found. Safe to assume the bottom sheet is closed.
-                isCommentSectionOpen = false
-                Log.d(TAG, "isCommentSectionOpen timed out -> reset to false")
-            }
         }
 
         val screenWidthPx = getScreenWidthPx()
@@ -607,34 +580,43 @@ class ShortVideoAccessibilityService : AccessibilityService() {
         reason: String,
         detectedPackageName: String? = null
     ) {
-        isShortVideoDetected = newState
-        if (lastPublishedState != newState) {
-            ReelDetectionChannelBridge.publishReelDetected(newState)
-            lastPublishedState = newState
-
-            if (newState) {
-                applyReelsLockForTwoDays(detectedPackageName)
-
+        try {
+            isShortVideoDetected = newState
+            if (lastPublishedState != newState) {
+                // Wrap channel publish in try-catch to prevent service crash if Flutter engine is detached.
                 try {
-                    val prefs = getSharedPreferences("reels_block_prefs", MODE_PRIVATE)
-                    val current = prefs.getInt("pending_blocks", 0)
-                    prefs.edit().putInt("pending_blocks", current + 1).apply()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Failed to increment pending blocks", t)
+                    ReelDetectionChannelBridge.publishReelDetected(newState)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to publish reel detection state to Flutter: ${e.message}")
                 }
+                lastPublishedState = newState
 
-                if (isFocusModeActive()) {
-                    showFocusModeOverlay(isAppBlock = false)
+                if (newState) {
+                    applyReelsLockForTwoDays(detectedPackageName)
+
+                    try {
+                        val prefs = getSharedPreferences("reels_block_prefs", MODE_PRIVATE)
+                        val current = prefs.getInt("pending_blocks", 0)
+                        prefs.edit().putInt("pending_blocks", current + 1).apply()
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed to increment pending blocks", t)
+                    }
+
+                    if (isFocusModeActive()) {
+                        showFocusModeOverlay(isAppBlock = false)
+                    } else {
+                        showReelsBlockOverlay()
+                    }
+                    val backSuccess = performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
+                    Log.d(TAG, "GLOBAL_ACTION_BACK triggered on reel detect: $backSuccess")
                 } else {
-                    showReelsBlockOverlay()
+                    // Do not auto-dismiss; user must tap Go Home.
                 }
-                val backSuccess = performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-                Log.d(TAG, "GLOBAL_ACTION_BACK triggered on reel detect: $backSuccess")
-            } else {
-                // Do not auto-dismiss; user must tap Go Home.
-            }
 
-            Log.d(TAG, "Reel detection changed -> $newState ($reason)")
+                Log.d(TAG, "Reel detection changed -> $newState ($reason)")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Unhandled error in updateDetectionState: ${e.message}", e)
         }
     }
 
@@ -908,25 +890,56 @@ class ShortVideoAccessibilityService : AccessibilityService() {
         return bounds.height().toFloat() / screenHeightPx.toFloat() >= FULL_SCREEN_MIN_RATIO
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.i(TAG, "onStartCommand called with startId=$startId, flags=$flags")
+        // START_STICKY ensures the system restarts this service if it's killed while running.
+        // The OS will restart the service with a null intent after a process kill.
+        return START_STICKY
+    }
+
     override fun onInterrupt() {
-        hideBlockOverlay()
-        hideReelsBlockOverlay(force = true)
+        try {
+            hideBlockOverlay()
+            hideReelsBlockOverlay(force = true)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error in onInterrupt: ${e.message}")
+        }
         Log.w(TAG, "Accessibility service interrupted")
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Log.i(TAG, "onUnbind called - allowing rebind")
+        Log.i(TAG, "onUnbind called - returning true to allow rebind on reconnection")
+        // Returning true tells the system to call onRebind() if the service is used again.
+        // This ensures automatic reconnection if temporarily disconnected.
         return true
     }
 
+    override fun onRebind(intent: Intent?) {
+        Log.i(TAG, "onRebind called - service reconnecting")
+        super.onRebind(intent)
+    }
+
     override fun onTaskRemoved(rootIntent: Intent?) {
-        Log.i(TAG, "onTaskRemoved called - service will continue running")
+        // This is called when the app task is removed from Recents.
+        // Since android:stopWithTask="false" is set, the service continues running.
+        // Log this lifecycle event for debugging.
+        Log.i(TAG, "onTaskRemoved called - app task removed from Recents. Service persists.")
+        try {
+            // Clean up any transient UI state, but keep the service alive for detection.
+            hideReelsBlockOverlay(force = true)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error cleaning up overlay on task removal: ${e.message}")
+        }
     }
 
     override fun onDestroy() {
-        hideBlockOverlay()
-        hideReelsBlockOverlay(force = true)
-        Log.i(TAG, "onDestroy called")
+        try {
+            hideBlockOverlay()
+            hideReelsBlockOverlay(force = true)
+        } catch (e: Exception) {
+            Log.w(TAG, "Error in onDestroy cleanup: ${e.message}")
+        }
+        Log.i(TAG, "onDestroy called - service is shutting down")
         super.onDestroy()
     }
 

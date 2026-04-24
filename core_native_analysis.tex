@@ -1,0 +1,145 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{bengali}
+\setotherlanguage{english}
+
+% Provide a Bengali font. 'Kalpurush' or 'SolaimanLipi' are commonly used.
+% You must compile this file with XeLaTeX or LuaLaTeX. 
+\newfontfamily\bengalifont[Script=Bengali, AutoFakeBold=2.5, AutoFakeSlant=0.2]{Kalpurush}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan, pdftitle={Native Core Analysis}}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4
+}
+\lstset{style=mystyle}
+
+\title{\textbf{\Large Native Core Analysis\\ (Constants, AccessibilityUtils \& OverlayManager)}}
+\author{Synapse / No To Distraction}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{ভূমিকা}
+আপনার দেওয়া ৩টি ফাইল (\texttt{Constants.kt}, \texttt{AccessibilityUtils.kt}, এবং \texttt{OverlayManager.kt}) মূলত অ্যাপের কোর লজিক, সেটিংস এবং ব্লকিং স্ক্রিন দেখানোর কাজে ব্যবহৃত হয়। প্রতিটি ফাইলের ইমপোর্ট, ফাংশন, এবং এবং অন্যান্য ফাইলের সাথে এদের কানেকশন বিস্তারিতভাবে নিচে দেওয়া হলো:
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title={১. Constants.kt}]
+এই ফাইলটিতে অ্যাপের সমস্ত \textbf{ধ্রুবক (Constants)} বা ফিক্সড ভ্যালুগুলো স্টোর করে রাখা হয়েছে। যাতে পুরো অ্যাপে বারবার একই নাম বা নম্বর টাইপ করতে না হয়। এটি মূলত একটি ডিকশনারির মতো কাজ করে।
+
+\textbf{ইমপোর্টস (Imports):}
+\begin{itemize}[label=$\circ$]
+    \item \texttt{AccessibilityEvent}: অ্যান্ড্রয়েডের স্ক্রিন ইভেন্টগুলো চেনার জন্য।
+\end{itemize}
+
+\textbf{মূল ব্লক ও ভেরিয়েবলসমূহ:}
+\begin{itemize}[label=$\circ$]
+    \item \textbf{SharedPreferences Keys:} \texttt{PREF\_BLOCK\_FB\_REELS}, \texttt{PREF\_FOCUS\_MODE\_END\_TIME\_MS} ইত্যাদি। এগুলো হলো মেমোরিতে ডেটা সেভ করার "চাবি" (Key)। 
+    \begin{itemize}[label=--]
+        \item \textit{কানেকশন:} \texttt{MainActivity.kt} এবং \texttt{StorageManager.kt} ফাইল এই চাবিগুলো ধরে ডেটা সেভ করে ও পড়ে।
+    \end{itemize}
+    \item \textbf{Package Names:} \texttt{FACEBOOK\_PACKAGE}, \texttt{INSTAGRAM\_PACKAGE}: ফেসবুক, ইন্সটাগ্রাম ও ইউটিউবের আসল প্যাকেজ নেইম এখানে ফিক্সড করা।
+    \item \textbf{Thresholds \& Durations:} 
+    \begin{itemize}[label=--]
+        \item \texttt{EVENT\_DEBOUNCE\_MS (400L)}: খুব দ্রুত বারবার ইভেন্ট আসা ঠেকাতে ৪০০ মিলিসেকেন্ড ডিলে।
+        \item \texttt{REELS\_LOCK\_DURATION\_MS}: রিল ব্লক ফিচারটি একবার লক করলে কতক্ষণ লক থাকবে তার হিসেব।
+    \end{itemize}
+    \item \textbf{Spatial Heuristic Constants:} এটি খুবই ইন্টারেস্টিং! রিল বা শর্টস ভিডিওগুলো সাধারণত পুরো স্ক্রিন জুড়ে থাকে। এই রেশিওগুলো দিয়ে \texttt{ScannerEngine.kt} গাণিতিক পরিমাপে বুঝতে পারে ইউজারের স্ক্রিনে চলা ভিডিওটি আসলেই 'রিলস' কি না। 
+    \item \textbf{TARGET\_EVENT\_TYPES:} সার্ভিসটি শুধুমাত্র স্ক্রিনের উইন্ডো চেঞ্জ বা স্ক্রোলিং ইভেন্টগুলোকে মনিটর করবে তার একটি লিস্ট।
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title={২. AccessibilityUtils.kt}]
+অ্যাক্সেসিবিলিটি সার্ভিসটি (যা স্ক্রিন স্ক্যান করে) ঠিকমতো চালু আছে কি না, তা একদম নির্ভুলভাবে চেক করবে এই ফাইল।
+
+\textbf{ইমপোর্টস (Imports):}
+\begin{itemize}[label=$\circ$]
+    \item \texttt{Context, ComponentName, Settings, AccessibilityManager, ContextCompat}: সিস্টেমের সার্ভিস লিস্ট এবং সেটিংস চেক করার জন্য প্রয়োজনীয় অ্যান্ড্রয়েড টুলস।
+\end{itemize}
+
+\textbf{ফাংশন এবং কানেকশন:}
+\begin{itemize}[label=$\circ$]
+    \item \textbf{\texttt{isShortVideoServiceEnabled()}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} ফাংশনটি দুই ধাপে চেকিং করে। প্রথমে এটি অ্যান্ড্রয়েডের \texttt{AccessibilityManager} কে জিজ্ঞেস করে। অনেক সময় ফোনে ক্যাশ এর কারণে এটি ভুল উত্তর দেয়, তাই দ্বিতীয় ধাপে এটি সরাসরি ফোনের সেটিংস এর কোর ডেটাবেস (\texttt{Settings.Secure}) চেক করে কনফার্ম হয়। 
+        \item \textbf{নেটিভ কানেকশন:} \texttt{MainActivity.kt} এবং \texttt{ShortVideoAccessibilityService.kt} এখান থেকে এটি কল করে।
+        \item \textbf{Flutter কানেকশন:} ফ্লাটারের \texttt{accessibility\_permission\_service.dart} এই স্ট্যাটাসটিই দেখতে পায়।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=orange!5!white,colframe=orange!75!black,title={৩. OverlayManager.kt}]
+অ্যাপের সবচাইতে ভিজ্যুয়াল বা দৃশ্যমান কাজ করে এই ফাইলটি। যখনই কোনো রিলস বা ব্লক করা অ্যাপ ওপেন হয়, তখন উইন্ডোটি বা ব্লকার ভেসে ওঠে, তা এই ফাইলটিই তৈরি করে।
+
+\textbf{ইমপোর্টস (Imports):}
+\begin{itemize}[label=$\circ$]
+    \item \texttt{WindowManager, View, Button, TextView} ইত্যাদি: উইন্ডো, ওভারলে ড্র করার জন্য।
+    \item \texttt{Handler, Looper, SystemClock}: লাইভ টাইমার বা কাউন্টডাউন চালানোর জন্য।
+\end{itemize}
+
+\textbf{ফাংশন ও ব্লকের কাজ:}
+\begin{itemize}[label=$\circ$]
+    \item \textbf{ক্লাস লেভেল ভেরিয়েবল:} \texttt{windowManager} হলো অ্যান্ড্রয়েডের এমন এক টুল যা যেকোনো অ্যাপের উপরে উইন্ডো ভাসিয়ে রাখতে পারে। \texttt{countdownRunnable} হলো একটি লুপ যা প্রতি সেকেন্ডে একবার করে কল হয়ে টাইমার আপডেট করে।
+    
+    \item \textbf{\texttt{showReelsOverlay(isFocusMode: Boolean)}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} যখন ইউজার রিলস দেখে, তখন এটি পুরো স্ক্রিনের উপর একটি কালো লেয়ার বসিয়ে দেয়। ফোকাস মোড চলাকালীন সময়ে এটি একটি সুন্দর মোটিভেশনাল উক্তিও দেখায়।
+        \item \textbf{কানেকশন:} \texttt{ScannerEngine.kt} যখন রিলস ডিটেক্ট করে তখন এটি কল হয়।
+        \item \textbf{Flutter কানেকশন:} এই ফাংশনের ভেতর থেকেই \texttt{ReelDetectionChannelBridge} কে কল করা হয়, যা সাথে সাথেই ফ্লাটার অ্যাপকে জানিয়ে দেয় একটি রিল ব্লক করা হয়েছে।
+    \end{itemize}
+
+    \item \textbf{\texttt{showQuickBlockOverlay(...)}} ও \textbf{\texttt{hideQuickBlockOverlay()}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} এটি আলাদা একটি ওভারলে। যখন পুরো একটি অ্যাপ কুইক ব্লকের মাধ্যমে ব্লক করা থাকে, তখন এই ব্লক স্ক্রিনটি দেখায় এবং একটি লাইভ টাইমার চলতে থাকে।
+    \end{itemize}
+
+    \item \textbf{\texttt{isSuppressed()}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} ইউজার "Go Home" এ ক্লিক করলে এই ফাংশনটি আড়াই সেকেন্ডের জন্য ব্লকারকে মিউট রাখে যাতে ওভারলেটি হোমস্ক্রিনে বারবার ফ্লিকার বা গ্লিচ না করে। 
+    \end{itemize}
+    
+    \item \textbf{\texttt{createLayoutParams()}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} উইন্ডোটি ఎంతটুক বড় হবে, তা কনফিগার করে। এখানে \texttt{TYPE\_APPLICATION\_OVERLAY} ব্যবহার করা হয় যাতে এটি সিস্টেমের একদম সবকিছুর উপরে থাকতে পারে।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5cm}
+\textbf{সংক্ষেপে (Summary Flow):}\\
+\texttt{ScannerEngine.kt} (রিলস খুঁজলো) $\rightarrow$ রুলস মেলালো \texttt{Constants.kt} থেকে $\rightarrow$ রিলস পেলে \texttt{OverlayManager.kt} কে নির্দেশ দিলো ব্লকার দেখাতে $\rightarrow$ ওভারলে স্ক্রিনে ভেসে উঠলো $\rightarrow$ ফ্লাটারকে জানিয়ে দেওয়া হলো।
+
+\end{document}

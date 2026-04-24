@@ -64,7 +64,6 @@ class _QuickBlockScreenState extends State<QuickBlockScreen> {
         return;
       }
 
-      // Avoid unnecessary rebuild pressure while user is typing in search.
       if (_searchFocusNode.hasFocus) {
         return;
       }

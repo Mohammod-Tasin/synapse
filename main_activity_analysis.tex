@@ -1,0 +1,126 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{bengali}
+\setotherlanguage{english}
+\newfontfamily\bengalifont[Script=Bengali, AutoFakeBold=2.5, AutoFakeSlant=0.2]{Kalpurush}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{enumitem}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan, pdftitle={MainActivity.kt Analysis}}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{backgroundcolor=\color{backcolour}, commentstyle=\color{codegreen}, keywordstyle=\color{magenta}, numberstyle=\tiny\color{codegray}, stringstyle=\color{codepurple}, basicstyle=\ttfamily\small, breakatwhitespace=false, breaklines=true, captionpos=b, keepspaces=true, numbers=left, numbersep=5pt, showspaces=false, showstringspaces=false, showtabs=false, tabsize=4}
+\lstset{style=mystyle}
+
+\title{\textbf{\Large MainActivity.kt Analysis\\ (Connections \& Dependencies)}}
+\author{Synapse / No To Distraction}
+\date{\today}
+
+\begin{document}
+\maketitle
+\section*{ভূমিকা}
+আপনার দেওয়া \textbf{\texttt{MainActivity.kt}} ফাইলের প্রতিটি ফাংশন কোনটি কোন ফাইলের সাথে এবং ফ্লাটারের কোন সার্ভিসের সাথে যুক্ত (Connected), তা নিচে আরও পরিষ্কারভাবে তুলে ধরা হলো:
+
+\vspace{0.5cm}
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title={১. মূল ক্লাস এবং ভেরিয়েবল}]
+\textbf{\texttt{class MainActivity : FlutterActivity()}}
+\begin{itemize}[label=$\circ$]
+    \item \textbf{কাজ:} অ্যাপের মূল স্ক্রিন। \texttt{accessibilityControlChannel} এর মাধ্যমে ডেটা আদান-প্রদান করে।
+    \item \textbf{Flutter কানেকশন:} এটি Flutter ইঞ্জিনের সাথে সরাসরি কানেক্টেড এবং ফ্লাটার থেকে আসা \texttt{MethodChannel} রিকোয়েস্ট শোনে।
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=orange!5!white,colframe=orange!75!black,title={২. SharedPreferences সম্পর্কিত ফাংশন}]
+\begin{itemize}[label=$\circ$]
+    \item \textbf{\texttt{updateReelsBlockToggles(...)}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} রিলস ব্লকার অন/অফ সেভ করে।
+        \item \textbf{লোকাল কানেকশন:} এই ক্লাসেরই \texttt{configureFlutterEngine}-এর ভেতর \textbf{"setReelsBlockToggles"} রিকোয়েস্ট থেকে এই ফাংশনটি কল হয়।
+    \end{itemize}
+    \item \textbf{\texttt{isReelsLockActiveForKey(...)}} \& \textbf{\texttt{getRemainingLockHours(...)}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} ব্লকটি লক করা কিনা ও কত সময় বাকি তা দেখে।
+        \item \textbf{লোকাল কানেকশন:} \texttt{getReelsLockStatus()} ফাংশনের ভেতর এগুলো কল করা হয়।
+    \end{itemize}
+    \item \textbf{\texttt{getReelsLockStatus(...)}}
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} ফেসবুক, ইন্সটাগ্রাম ও ইউটিউবের লক স্ট্যাটাস পাঠায়।
+        \item \textbf{Flutter কানেকশন:} ফ্লাটার লেয়ারের \texttt{reel\_detection\_listener\_service.dart} অথবা \texttt{settings} থেকে \textbf{"getReelsLockStatus"} কমান্ডের মাধ্যমে এটি কল হয়।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,title={৩. Flutter-এর সাথে যোগাযোগের মূল থ্রেড (configureFlutterEngine)}]
+\begin{lstlisting}[language=Kotlin]
+override fun configureFlutterEngine(flutterEngine: FlutterEngine){ ... }
+\end{lstlisting}
+সবচেয়ে গুরুত্বপূর্ণ ফাংশন। এখানে \texttt{no\_to\_distraction/accessibility\_control} নামের চ্যানেল তৈরি হয়।
+\begin{itemize}[label=$\circ$]
+    \item \textbf{লোকাল কানেকশন (Native):} 
+    \begin{itemize}[label=--]
+        \item এটি \texttt{ReelDetectionChannelBridge.kt} ফাইলের \texttt{attachFlutterEngine(flutterEngine)} কে কল করে, যেন ব্রিজটি কাজ করতে পারে।
+    \end{itemize}
+    \item \textbf{Flutter কানেকশন (Dart):} 
+    \begin{itemize}[label=--]
+        \item ফ্লাটারের \texttt{accessibility\_permission\_service.dart} থেকে অ্যাক্সেসিবিলিটি চেকের কমান্ডগুলো আসে।
+        \item ফ্লাটারের \texttt{quick\_block\_service.dart} থেকে \textbf{"getQuickBlockStatus"} ও \textbf{"startQuickBlock"} এর কমান্ডগুলো আসে।
+    \end{itemize}
+\end{itemize}
+
+\textbf{Quick Block ব্লকের কানেকশন:}
+\begin{itemize}[label=$\circ$]
+    \item \textbf{\texttt{startQuickBlock}} কমান্ড:
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} কুইক ব্লক চালু করে।
+        \item \textbf{নেটিভ ফাইলের সাথে কানেকশন:} এর ভেতরে ডেটা সেভ করার জন্য \texttt{QuickBlockStorage.kt} ফাইলের \textbf{\texttt{QuickBlockStorage.upsert()}} ফাংশনকে কল করে।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=purple!5!white,colframe=purple!75!black,title={৪. onDestroy() ব্লক}]
+\begin{itemize}[label=$\circ$]
+    \item \textbf{কাজ:} চ্যানেল ও লিসেনারগুলো সফলভাবে ক্লিয়ার (Null) করে দেয়।
+    \item \textbf{লোকাল কানেকশন:} এটি \texttt{ReelDetectionChannelBridge.kt} ফাইলের \textbf{\texttt{ReelDetectionChannelBridge.detachChannel()}} ফাংশনকে কল করে, যাতে মেমরি লিক না হয়।
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=cyan!5!white,colframe=cyan!75!black,title={৫. পারমিশন এবং সেটিং ফাংশনসমূহ}]
+\begin{itemize}[label=$\circ$]
+    \item \textbf{\texttt{isAccessibilityServiceEnabled()}}
+    \begin{itemize}[label=--]
+        \item \textbf{নেটিভ কানেকশন:} এটি \texttt{AccessibilityUtils.kt} ফাইলের \textbf{\texttt{AccessibilityUtils.isShortVideoServiceEnabled()}} ফাংশনকে কল করে।
+        \item \textbf{Flutter কানেকশন:} ফ্লাটারের \texttt{accessibility\_permission\_service.dart} থেকে কল হয়।
+    \end{itemize}
+    \item \textbf{\texttt{openAccessibilitySettings()}, \texttt{isOverlayPermissionGranted()}, \texttt{isUsageAccessGranted()}} ইত্যাদি:
+    \begin{itemize}[label=--]
+        \item \textbf{কাজ:} অন্যান্য সব পারমিশন হ্যান্ডেল করে।
+        \item \textbf{Flutter কানেকশন:} ফ্লাটারের \texttt{accessibility\_permission\_service.dart} অথবা Onboarding UI থেকে \textbf{"openOverlaySettings"} বা \textbf{"isUsageAccessGranted"} হিসেবে কল করা হয়। ইউজারকে সরাসরি ফোনের সেটিং পেজে রিডাইরেক্ট করে।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!70!black,title={৬. অ্যাপ লিস্ট ও ফোকাস মোড}]
+\begin{itemize}[label=$\circ$]
+    \item \textbf{\texttt{getInstalledApps()}} ও \textbf{\texttt{getDistractingApps()}}
+    \begin{itemize}[label=--]
+        \item \textbf{Flutter কানেকশন:} ফ্লাটারের \texttt{quick\_block\_service.dart} অথবা \texttt{distracting\_apps\_screen.dart} থেক ডাটা ফেচ করতে এই ফাংশনগুলি কল হয়।
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5cm}
+\textbf{সংক্ষেপে (Summary Flow):}\\
+Flutter App (\texttt{accessibility\_permission\_service.dart, quick\_block\_service.dart}) $\iff$ \texttt{MethodChannel} $\iff$ \texttt{MainActivity.kt} (এখানে পারমিশন চেক/সেভ রিকোয়েস্ট হ্যান্ডেল হয়) $\Longrightarrow$ \texttt{StorageManager.kt / QuickBlockStorage.kt} (ডেটা সেভ হয়) $\Longleftarrow$ \texttt{ScannerEngine.kt / ShortVideoAccessibilityService.kt} (এই সেভ করা সেটিংসগুলো রিড করে কাজ করে)।
+
+\end{document}

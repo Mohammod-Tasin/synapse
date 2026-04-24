@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # JWT Configuration
     JWT_SECRET_KEY: str = "your-super-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 86400
     
     # API Configuration
     API_TITLE: str = "No To Distraction API"
